@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info:
+  title: Appointment Booking API
+  version: 0.1.0
+  description: >-
+    Versioned contract for the appointment booking assessment. Product endpoints
+    are added only through approved delivery issues.
+servers:
+  - url: /api/v1
+    description: Same-origin application API
+paths: {}

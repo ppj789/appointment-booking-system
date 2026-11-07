@@ -1,0 +1,39 @@
+:host,
+mat-card {
+  display: block;
+  height: 100%;
+}
+
+mat-card {
+  border-color: var(--app-color-outline);
+  border-radius: var(--app-radius-card);
+  background: var(--app-color-surface);
+  box-shadow: none;
+}
+
+mat-card-header {
+  align-items: center;
+  padding: 1.35rem 1.35rem 0;
+}
+
+mat-card-content {
+  padding: 1.25rem 1.35rem 1.5rem;
+}
+
+mat-card-title {
+  color: var(--app-color-text);
+  font-weight: 700;
+}
+
+.layer-icon {
+  display: grid;
+  place-items: center;
+  background: var(--app-color-primary-container);
+  color: var(--app-color-primary);
+}
+
+p {
+  margin-top: 0;
+  color: var(--app-color-muted);
+  line-height: 1.65;
+}

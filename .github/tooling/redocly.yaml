@@ -1,0 +1,6 @@
+extends:
+  - recommended
+
+rules:
+  # The assessment repository does not publish a software license at this stage.
+  info-license: off
