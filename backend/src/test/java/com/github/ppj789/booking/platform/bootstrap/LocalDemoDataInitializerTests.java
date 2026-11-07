@@ -1,4 +1,4 @@
-package com.github.ppj789.booking.branch.infrastructure;
+package com.github.ppj789.booking.platform.bootstrap;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -13,13 +13,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.ApplicationArguments;
 
-class LocalDemoBranchDataInitializerTests {
+class LocalDemoDataInitializerTests {
 
     @Test
-    void upsertsBothSyntheticBranches() throws Exception {
+    void seedsBothSyntheticBranchesWhenTheyDoNotExist() throws Exception {
         BranchRepository branchRepository = mock(BranchRepository.class);
         when(branchRepository.findByPublicCode(anyString())).thenReturn(Optional.empty());
-        LocalDemoBranchDataInitializer initializer = new LocalDemoBranchDataInitializer(branchRepository);
+        LocalDemoDataInitializer initializer = new LocalDemoDataInitializer(branchRepository);
 
         initializer.run(mock(ApplicationArguments.class));
 

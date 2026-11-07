@@ -1,4 +1,4 @@
-package com.github.ppj789.booking.branch.infrastructure;
+package com.github.ppj789.booking.platform.bootstrap;
 
 import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.branch.persistence.BranchRepository;
@@ -13,10 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Profile("local")
 @RequiredArgsConstructor
-class LocalDemoBranchDataInitializer implements ApplicationRunner {
+class LocalDemoDataInitializer implements ApplicationRunner {
 
-    static final String JOHANNESBURG_DEMO_CODE = "JHB-DEMO";
-    static final String CAPE_TOWN_DEMO_CODE = "CPT-DEMO";
+    static final String JOHANNESBURG_DEMO_BRANCH_CODE = "JHB-DEMO";
+    static final String CAPE_TOWN_DEMO_BRANCH_CODE = "CPT-DEMO";
 
     private static final String TIMEZONE = "Africa/Johannesburg";
 
@@ -25,14 +25,18 @@ class LocalDemoBranchDataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        seedBranches();
+    }
+
+    private void seedBranches() {
         upsertBranch(
                 UUID.fromString("11111111-1111-4111-8111-111111111111"),
-                JOHANNESBURG_DEMO_CODE,
+                JOHANNESBURG_DEMO_BRANCH_CODE,
                 "Johannesburg Demo Branch",
                 "1 Demo Street, Johannesburg");
         upsertBranch(
                 UUID.fromString("22222222-2222-4222-8222-222222222222"),
-                CAPE_TOWN_DEMO_CODE,
+                CAPE_TOWN_DEMO_BRANCH_CODE,
                 "Cape Town Demo Branch",
                 "2 Example Avenue, Cape Town");
     }
