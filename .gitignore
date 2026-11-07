@@ -13,7 +13,7 @@ hs_err_pid*
 replay_pid*
 
 # Angular and Node.js
-frontend/node_modules/
+**/node_modules/
 frontend/dist/
 frontend/.angular/
 frontend/coverage/
