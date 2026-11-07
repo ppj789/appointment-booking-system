@@ -25,11 +25,19 @@ updates:
         patterns: ["*"]
 
   - package-ecosystem: docker
-    directory: /
+    directory: /backend
     schedule:
       interval: weekly
     groups:
-      container-images:
+      backend-container-images:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend-container-images:
         patterns: ["*"]
 
   - package-ecosystem: github-actions

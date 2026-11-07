@@ -11,7 +11,7 @@ COPY src src
 RUN mvn --batch-mode --no-transfer-progress verify \
     && cp "$(find target -maxdepth 1 -name '*.jar' ! -name '*.original' -print -quit)" /workspace/app.jar
 
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre-noble
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl \

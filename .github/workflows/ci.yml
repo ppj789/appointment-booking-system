@@ -1,4 +1,4 @@
-name: Quality
+name: CI
 
 on:
   push:
@@ -11,21 +11,21 @@ permissions:
   contents: read
 
 concurrency:
-  group: quality-${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  backend-quality:
-    name: backend-quality
-    runs-on: ubuntu-latest
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7
       - name: Set up Java 25
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "25"
@@ -34,17 +34,17 @@ jobs:
       - name: Verify backend
         run: ./mvnw --batch-mode --no-transfer-progress verify
 
-  frontend-quality:
-    name: frontend-quality
-    runs-on: ubuntu-latest
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7
       - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -58,14 +58,15 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-  contract-quality:
-    name: contract-quality
-    runs-on: ubuntu-latest
+  repository:
+    name: Repository
+    runs-on: ubuntu-24.04
+    needs: [backend, frontend]
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7
       - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -76,22 +77,10 @@ jobs:
       - name: Validate OpenAPI contract
         run: npm run contract:check
         working-directory: .github/tooling
-
-  docs:
-    name: docs
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-          cache-dependency-path: .github/tooling/package-lock.json
-      - name: Install repository tooling
-        run: npm ci
-        working-directory: .github/tooling
       - name: Validate public documentation
         run: npm run docs:check
         working-directory: .github/tooling
+      - name: Build backend container
+        run: docker build --pull --tag appointment-booking-backend:ci backend
+      - name: Build frontend container
+        run: docker build --pull --tag appointment-booking-frontend:ci frontend
