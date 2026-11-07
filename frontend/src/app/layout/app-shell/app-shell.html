@@ -1,0 +1,26 @@
+<div class="app-shell">
+  <mat-toolbar class="topbar">
+    <a class="brand" routerLink="/" aria-label="Appointment Booking home">
+      <span class="brand-mark" aria-hidden="true">
+        <mat-icon>event_available</mat-icon>
+      </span>
+      <span>Appointment Booking</span>
+    </a>
+
+    <span class="topbar-spacer"></span>
+
+    <a mat-button [href]="links.apiDocs">
+      <mat-icon>description</mat-icon>
+      API
+    </a>
+  </mat-toolbar>
+
+  <main>
+    <router-outlet />
+  </main>
+
+  <footer>
+    <span>Appointment Booking System</span>
+    <span>Foundation only · No customer data</span>
+  </footer>
+</div>

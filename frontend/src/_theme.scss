@@ -1,0 +1,49 @@
+@use '@angular/material' as mat;
+
+// Change the platform palette and typography here. Angular Material components
+// and application-specific styles both consume the resulting shared tokens.
+$primary-palette: mat.$azure-palette;
+$tertiary-palette: mat.$blue-palette;
+$typography: Roboto;
+$density: 0;
+
+@mixin apply-platform-theme() {
+  @include mat.theme(
+    (
+      color: (
+        primary: $primary-palette,
+        tertiary: $tertiary-palette,
+      ),
+      typography: $typography,
+      density: $density,
+    )
+  );
+
+  // Brand roles
+  --app-color-primary: var(--mat-sys-primary);
+  --app-color-on-primary: var(--mat-sys-on-primary);
+  --app-color-primary-container: var(--mat-sys-primary-container);
+  --app-color-secondary: var(--mat-sys-secondary);
+  --app-color-on-secondary: var(--mat-sys-on-secondary);
+  --app-color-tertiary: var(--mat-sys-tertiary);
+  --app-color-on-tertiary: var(--mat-sys-on-tertiary);
+
+  // Surface and content roles
+  --app-color-page: #f7f9fc;
+  --app-color-surface: var(--mat-sys-surface-container-lowest);
+  --app-color-text: var(--mat-sys-on-surface);
+  --app-color-muted: var(--mat-sys-on-surface-variant);
+  --app-color-outline: var(--mat-sys-outline-variant);
+  --app-color-focus: #ffb000;
+
+  // Typography and shape
+  --app-font-family: var(--mat-sys-body-medium-font);
+  --app-radius-card: 1rem;
+
+  // Shared layout values
+  --app-content-width: 73.75rem;
+  --app-space-sm: 0.5rem;
+  --app-space-md: 1rem;
+  --app-space-lg: 1.5rem;
+  --app-space-xl: 2rem;
+}

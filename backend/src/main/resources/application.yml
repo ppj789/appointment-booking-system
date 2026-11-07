@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: appointment-booking-api
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  datasource:
+    url: ${BOOKING_DB_URL:jdbc:postgresql://localhost:5432/appointment_booking}
+    username: ${BOOKING_DB_USERNAME:booking_app}
+    password: ${BOOKING_DB_PASSWORD:local_booking_password}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+info:
+  app:
+    name: Appointment Booking API
+    description: Full-stack assessment foundation
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+    path: /swagger-ui.html
+    url: /openapi/appointment-booking.yaml
+    doc-expansion: none

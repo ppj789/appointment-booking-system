@@ -1,0 +1,12 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <div mat-card-avatar class="layer-icon" aria-hidden="true">
+      <mat-icon>{{ layer().icon }}</mat-icon>
+    </div>
+    <mat-card-title>{{ layer().name }}</mat-card-title>
+    <mat-card-subtitle>{{ layer().detail }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p>{{ layer().description }}</p>
+  </mat-card-content>
+</mat-card>
