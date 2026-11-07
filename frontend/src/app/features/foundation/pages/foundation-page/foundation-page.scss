@@ -1,13 +1,15 @@
+@use 'breakpoints';
+
 .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-  gap: clamp(2rem, 5vw, 4rem);
+  grid-template-columns: 1fr;
+  gap: var(--app-space-xl);
   align-items: center;
-  padding: clamp(3rem, 7vw, 5rem) 0;
+  padding: 3rem 0;
 }
 
 .hero-copy {
-  max-width: 680px;
+  max-width: none;
 }
 
 .eyebrow {
@@ -45,11 +47,13 @@ h1 {
 
 .hero-actions {
   display: flex;
-  flex-wrap: wrap;
+  align-items: stretch;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
 .hero-actions a {
+  justify-content: center;
   min-height: 46px;
 }
 
@@ -134,35 +138,33 @@ h1 {
 
 .layer-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
 }
 
-@media (max-width: 820px) {
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-copy {
-    max-width: none;
-  }
-
-  .hero-visual {
-    justify-items: start;
-  }
-
-  .layer-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 520px) {
+@include breakpoints.medium-up {
   .hero-actions {
-    align-items: stretch;
-    flex-direction: column;
+    align-items: center;
+    flex-flow: row wrap;
   }
 
   .hero-actions a {
-    justify-content: center;
+    justify-content: initial;
+  }
+}
+
+@include breakpoints.expanded-up {
+  .hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    padding: clamp(3rem, 7vw, 5rem) 0;
+  }
+
+  .hero-copy {
+    max-width: 680px;
+  }
+
+  .layer-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

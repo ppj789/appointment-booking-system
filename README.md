@@ -53,6 +53,8 @@ com.github.ppj789.booking/
 
 Feature packages are added only when their delivery ticket introduces real code; the repository does not keep empty architectural placeholder folders.
 
+Frontend styling is mobile-first. `frontend/src/_theme.scss` owns platform design tokens, while `frontend/src/styles/_breakpoints.scss` owns shared responsive boundaries. Component styles consume those decisions but retain responsibility for their own layout. Repeated UI patterns, such as data tables, move into a Material-based component under `shared/ui/` once the product introduces a concrete reusable need.
+
 ## Run the complete foundation
 
 Requirements: Docker with Compose support.

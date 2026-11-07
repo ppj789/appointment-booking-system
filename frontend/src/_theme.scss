@@ -39,4 +39,11 @@ $density: 0;
   // Typography and shape
   --app-font-family: var(--mat-sys-body-medium-font);
   --app-radius-card: 1rem;
+
+  // Shared layout values
+  --app-content-width: 73.75rem;
+  --app-space-sm: 0.5rem;
+  --app-space-md: 1rem;
+  --app-space-lg: 1.5rem;
+  --app-space-xl: 2rem;
 }
