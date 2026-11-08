@@ -23,6 +23,24 @@ spring:
 
 server:
   shutdown: graceful
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${BOOKING_SESSION_COOKIE_SECURE:true}
+
+booking:
+  identity-security:
+    credential-setup-expiry: ${BOOKING_CREDENTIAL_SETUP_EXPIRY:24h}
+    absolute-session-timeout: ${BOOKING_ABSOLUTE_SESSION_TIMEOUT:8h}
+    login-rate-limit:
+      attempts: ${BOOKING_LOGIN_RATE_LIMIT_ATTEMPTS:10}
+      window: ${BOOKING_LOGIN_RATE_LIMIT_WINDOW:5m}
+    setup-rate-limit:
+      attempts: ${BOOKING_SETUP_RATE_LIMIT_ATTEMPTS:10}
+      window: ${BOOKING_SETUP_RATE_LIMIT_WINDOW:5m}
 
 management:
   endpoints:
