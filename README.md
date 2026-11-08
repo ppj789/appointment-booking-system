@@ -102,9 +102,10 @@ Backend, with Java 25 configured:
 
 ```bash
 cd backend
-./mvnw test
-./mvnw package
+./mvnw verify
 ```
+
+Backend verification compiles the application, runs the isolated test suite, packages the application, and checks the Java source against the repository's focused Checkstyle rules.
 
 On Windows PowerShell, use `./mvnw.cmd` instead.
 
