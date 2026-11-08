@@ -1,4 +1,4 @@
-FROM maven:3.9.11-eclipse-temurin-25 AS build
+FROM maven:3.10.0-eclipse-temurin-25-resolute AS build
 
 WORKDIR /workspace
 
@@ -8,10 +8,11 @@ COPY mvnw mvnw
 RUN mvn --batch-mode --no-transfer-progress dependency:go-offline
 
 COPY src src
+COPY config config
 RUN mvn --batch-mode --no-transfer-progress verify \
     && cp "$(find target -maxdepth 1 -name '*.jar' ! -name '*.original' -print -quit)" /workspace/app.jar
 
-FROM eclipse-temurin:25-jre-noble
+FROM eclipse-temurin:25-jre-resolute
 
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends curl \

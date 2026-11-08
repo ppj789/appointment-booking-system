@@ -92,12 +92,15 @@ class AccountSetupServiceTests {
                 properties(),
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        assertThrows(
+        SetupUnavailableException unknownSetup = assertThrows(
                 SetupUnavailableException.class,
                 () -> service.complete("unknown-token", "valid-password"));
-        assertThrows(
+        SetupUnavailableException expiredSetupFailure = assertThrows(
                 SetupUnavailableException.class,
                 () -> service.complete("expired-token", "valid-password"));
+
+        assertEquals("Account setup is unavailable", unknownSetup.getMessage());
+        assertEquals(unknownSetup.getMessage(), expiredSetupFailure.getMessage());
     }
 
     private IdentitySecurityProperties properties() {

@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeIn;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
+import io.swagger.v3.oas.annotations.servers.Server;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 title = "Appointment Booking API",
                 version = "0.1.0",
-                description = "MVP API for Admin, Staff calendar, Invitation, and Guest appointment journeys."))
+                description = "MVP API for Admin, Staff calendar, Invitation, and Guest appointment journeys."),
+        servers = @Server(url = "/", description = "Current host"))
 public class OpenApiConfiguration {
 }

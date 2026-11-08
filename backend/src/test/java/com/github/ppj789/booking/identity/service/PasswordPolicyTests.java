@@ -1,6 +1,7 @@
 package com.github.ppj789.booking.identity.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.github.ppj789.booking.identity.exception.InvalidPasswordException;
@@ -16,12 +17,22 @@ class PasswordPolicyTests {
 
     @Test
     void rejectsMissingShortAndLongPasswords() {
-        assertThrows(InvalidPasswordException.class, () -> PasswordPolicy.validate(null));
-        assertThrows(
+        InvalidPasswordException missingPassword =
+                assertThrows(InvalidPasswordException.class, () -> PasswordPolicy.validate(null));
+        InvalidPasswordException shortPassword = assertThrows(
                 InvalidPasswordException.class,
                 () -> PasswordPolicy.validate("a".repeat(PasswordPolicy.MIN_LENGTH - 1)));
-        assertThrows(
+        InvalidPasswordException longPassword = assertThrows(
                 InvalidPasswordException.class,
                 () -> PasswordPolicy.validate("a".repeat(PasswordPolicy.MAX_LENGTH + 1)));
+
+        String expectedMessage = "Password must contain between "
+                + PasswordPolicy.MIN_LENGTH
+                + " and "
+                + PasswordPolicy.MAX_LENGTH
+                + " characters";
+        assertEquals(expectedMessage, missingPassword.getMessage());
+        assertEquals(expectedMessage, shortPassword.getMessage());
+        assertEquals(expectedMessage, longPassword.getMessage());
     }
 }
