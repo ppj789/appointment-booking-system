@@ -41,10 +41,11 @@ info:
     description: Full-stack assessment foundation
 
 springdoc:
+  packages-to-scan: com.github.ppj789.booking
+  paths-to-match: /api/**
   api-docs:
     enabled: false
   swagger-ui:
     enabled: false
     path: /swagger-ui.html
-    url: /openapi/appointment-booking.yaml
     doc-expansion: none

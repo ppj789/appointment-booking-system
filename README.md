@@ -67,7 +67,11 @@ When the services are healthy:
 
 - Application shell: <http://localhost:8080>
 - Swagger UI: <http://localhost:8080/swagger-ui.html>
+- Generated OpenAPI JSON: <http://localhost:8080/v3/api-docs>
+- Generated OpenAPI YAML: <http://localhost:8080/v3/api-docs.yaml>
 - Health: <http://localhost:8080/actuator/health>
+
+The local profile generates the OpenAPI description from implemented Spring controllers, DTOs, validation rules, and focused Swagger annotations. API documentation is disabled by default outside the local profile.
 
 Stop the stack while preserving the database volume:
 

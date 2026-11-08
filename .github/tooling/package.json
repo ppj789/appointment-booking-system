@@ -3,11 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "contract:check": "redocly lint ../../backend/src/main/resources/static/openapi/appointment-booking.yaml",
     "docs:check": "prettier --check ../../README.md"
   },
   "devDependencies": {
-    "@redocly/cli": "2.74.0",
     "prettier": "3.9.10"
   }
 }
