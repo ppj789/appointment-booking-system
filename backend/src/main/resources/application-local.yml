@@ -1,4 +1,5 @@
 springdoc:
+  pre-loading-enabled: true
   api-docs:
     enabled: true
   swagger-ui:

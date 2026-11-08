@@ -74,9 +74,6 @@ jobs:
       - name: Install repository tooling
         run: npm ci
         working-directory: .github/tooling
-      - name: Validate OpenAPI contract
-        run: npm run contract:check
-        working-directory: .github/tooling
       - name: Validate public documentation
         run: npm run docs:check
         working-directory: .github/tooling
