@@ -1,8 +1,14 @@
 package com.github.ppj789.booking.platform.web;
 
+import com.github.ppj789.booking.identity.exception.BranchUnavailableException;
+import com.github.ppj789.booking.identity.exception.DuplicateStaffEmailException;
+import com.github.ppj789.booking.identity.exception.InvalidAccountInputException;
 import com.github.ppj789.booking.identity.exception.InvalidPasswordException;
 import com.github.ppj789.booking.identity.exception.RateLimitExceededException;
 import com.github.ppj789.booking.identity.exception.SetupUnavailableException;
+import com.github.ppj789.booking.identity.exception.StaffDeactivationBlockedException;
+import com.github.ppj789.booking.identity.exception.StaffSetupConflictException;
+import com.github.ppj789.booking.identity.exception.StaffUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Clock;
@@ -12,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -35,6 +42,62 @@ public class GlobalProblemHandler {
                 request);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> accessDenied(HttpServletRequest request) {
+        return response(
+                HttpStatus.FORBIDDEN,
+                "Access denied",
+                "The authenticated account cannot perform this operation.",
+                "ACCESS_DENIED",
+                request);
+    }
+
+    @ExceptionHandler({BranchUnavailableException.class, StaffUnavailableException.class})
+    public ResponseEntity<ProblemDetail> administrationTargetUnavailable(HttpServletRequest request) {
+        return response(
+                HttpStatus.NOT_FOUND,
+                "Administration target is unavailable",
+                "The selected Branch or Staff account is unavailable.",
+                "ADMINISTRATION_TARGET_UNAVAILABLE",
+                request);
+    }
+
+    @ExceptionHandler(DuplicateStaffEmailException.class)
+    public ResponseEntity<ProblemDetail> duplicateStaffEmail(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Staff email is unavailable",
+                "A Staff account already uses this email address.",
+                "STAFF_EMAIL_UNAVAILABLE",
+                request);
+    }
+
+    @ExceptionHandler(StaffSetupConflictException.class)
+    public ResponseEntity<ProblemDetail> staffSetupConflict(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Staff setup cannot be replaced",
+                "Only Staff waiting for initial setup can receive a replacement link.",
+                "STAFF_SETUP_CONFLICT",
+                request);
+    }
+
+    @ExceptionHandler(StaffDeactivationBlockedException.class)
+    public ResponseEntity<ProblemDetail> staffDeactivationBlocked(
+            StaffDeactivationBlockedException exception,
+            HttpServletRequest request) {
+        ResponseEntity<ProblemDetail> response = response(
+                HttpStatus.CONFLICT,
+                "Staff deactivation is blocked",
+                "Resolve the active customer work before deactivating this Staff account.",
+                "STAFF_DEACTIVATION_BLOCKED",
+                request);
+        ProblemDetail problem = response.getBody();
+        problem.setProperty("activeInvitation", exception.isActiveInvitation());
+        problem.setProperty("futureAppointment", exception.isFutureAppointment());
+        return response;
+    }
+
     @ExceptionHandler(SetupUnavailableException.class)
     public ResponseEntity<ProblemDetail> setupUnavailable(HttpServletRequest request) {
         return response(
@@ -45,7 +108,11 @@ public class GlobalProblemHandler {
                 request);
     }
 
-    @ExceptionHandler({InvalidPasswordException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler({
+        InvalidAccountInputException.class,
+        InvalidPasswordException.class,
+        MethodArgumentNotValidException.class
+    })
     public ResponseEntity<ProblemDetail> validationFailed(HttpServletRequest request) {
         return response(
                 HttpStatus.UNPROCESSABLE_CONTENT,

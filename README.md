@@ -1,8 +1,8 @@
 # Appointment Booking System
 
-A production-minded full-stack foundation for an Appointment Booking System assessment.
+A production-minded full-stack Appointment Booking System assessment.
 
-The current increment establishes the Angular, Spring Boot, and PostgreSQL runtime layers. It intentionally contains no booking features yet; product behaviour will be delivered in small, reviewable increments after the database contract.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch reference queries, Branch-bound Staff provisioning, one-time Staff account setup, and safe Staff deactivation. Calendar and booking behaviour follows in later increments.
 
 ## Technology baseline
 
@@ -43,10 +43,11 @@ The backend is organized by business feature rather than one global controllers/
 ```text
 com.github.ppj789.booking/
 ├── <feature>/
-│   ├── api/             HTTP controllers and transport models
-│   ├── application/     use cases, orchestration and ports
-│   ├── domain/          business rules and domain types
-│   └── infrastructure/  persistence and external adapters
+│   ├── controller/      HTTP endpoints and allow-listed transport models
+│   ├── exception/       feature-owned application failures
+│   ├── persistence/     JPA entities and Spring Data repositories
+│   ├── security/        feature-owned authentication and access policy
+│   └── service/         use cases and business orchestration
 ├── platform/            security, web, observability and configuration
 └── AppointmentBookingApiApplication.java
 ```
@@ -79,6 +80,28 @@ When the `local` profile is active, the demo-data initializer creates one clearl
 - Password: `admin`
 
 The Admin can manage Staff across all configured Branches; Staff accounts remain attached to exactly one Branch. These are local demonstration values, not production defaults. Outside the `local` profile, the application never creates an Admin. Production account provisioning is an explicit operational responsibility outside this assessment POC.
+
+### Exercise Staff account setup locally
+
+Swagger UI can demonstrate the implemented Admin and Staff setup flow:
+
+1. Call `POST /api/v1/sessions` with the local Admin credentials above.
+2. Call `GET /api/v1/admin/branches` and select a Branch public code.
+3. Call `POST /api/v1/admin/staff` with a unique Staff email:
+
+   ```json
+   {
+     "branchCode": "JHB-DEMO",
+     "displayName": "Demo Staff",
+     "email": "staff@example.test"
+   }
+   ```
+
+4. Copy the value after `#token=` from the one-time `setupUrl` response.
+5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters.
+6. Log out the Admin, then sign in with the new Staff email and password.
+
+The setup URL is returned once with `Cache-Control: no-store`; only its SHA-256 hash is persisted. Reusing a consumed token returns the same generic unavailable response as an invalid, expired, or revoked token.
 
 Stop the stack while preserving the database volume:
 
@@ -137,13 +160,14 @@ docker compose up postgres
 
 The default local credentials are intentionally fake and may be overridden through a private `.env` copied from `.env.example`.
 
-## Foundation security posture
+## Security posture
 
-- No product endpoint is exposed by this increment.
-- Health, the versioned OpenAPI document, and local Swagger UI are the only public backend surfaces.
-- All other requests are denied until authentication and feature issues introduce them deliberately.
-- Raw credentials, personal data, and invitation tokens must never be committed or logged.
+- Login and one-time Staff account setup are public capability endpoints; Admin operations require a server-managed authenticated session and active Admin workflow type.
+- Session cookies are HttpOnly and SameSite Lax. Authenticated mutations retain SPA CSRF protection.
+- Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
+- Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
+- Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged.
 
 ## Current limitation
 
-This is foundation code only. User registration, calendars, Invitations, availability, and Appointments are not implemented yet.
+Public registration is intentionally unavailable. Staff calendars, Availability Block commands, Invitation behaviour, Guest availability, and Appointment confirmation are not implemented yet.
