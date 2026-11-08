@@ -73,6 +73,13 @@ When the services are healthy:
 
 The local profile generates the OpenAPI description from implemented Spring controllers, DTOs, validation rules, and focused Swagger annotations. API documentation is disabled by default outside the local profile.
 
+When the `local` profile is active, the demo-data initializer creates one clearly synthetic Admin if it is absent:
+
+- Email: `admin@example.test`
+- Password: `admin`
+
+The Admin can manage Staff across all configured Branches; Staff accounts remain attached to exactly one Branch. These are local demonstration values, not production defaults. Outside the `local` profile, the application never creates an Admin. Production account provisioning is an explicit operational responsibility outside this assessment POC.
+
 Stop the stack while preserving the database volume:
 
 ```bash
@@ -102,9 +109,10 @@ Backend, with Java 25 configured:
 
 ```bash
 cd backend
-./mvnw test
-./mvnw package
+./mvnw verify
 ```
+
+Backend verification compiles the application, runs the isolated test suite, packages the application, and checks the Java source against the repository's focused Checkstyle rules.
 
 On Windows PowerShell, use `./mvnw.cmd` instead.
 

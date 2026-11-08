@@ -27,6 +27,7 @@ services:
       BOOKING_DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-appointment_booking}
       BOOKING_DB_USERNAME: ${POSTGRES_USER:-booking_app}
       BOOKING_DB_PASSWORD: ${POSTGRES_PASSWORD:-local_booking_password}
+      BOOKING_SESSION_COOKIE_SECURE: "false"
     depends_on:
       postgres:
         condition: service_healthy
