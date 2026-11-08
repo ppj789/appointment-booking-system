@@ -77,6 +77,7 @@ When the `local` profile is active, the demo-data initializer creates one clearl
 
 - Email: `admin@example.test`
 - Password: `admin`
+
 The Admin can manage Staff across all configured Branches; Staff accounts remain attached to exactly one Branch. These are local demonstration values, not production defaults. Outside the `local` profile, the application never creates an Admin. Production account provisioning is an explicit operational responsibility outside this assessment POC.
 
 Stop the stack while preserving the database volume:
