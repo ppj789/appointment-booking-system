@@ -1,4 +1,4 @@
-FROM maven:3.10.0-eclipse-temurin-25-resolute AS build
+FROM maven:3-eclipse-temurin-27-resolute AS build
 
 WORKDIR /workspace
 
