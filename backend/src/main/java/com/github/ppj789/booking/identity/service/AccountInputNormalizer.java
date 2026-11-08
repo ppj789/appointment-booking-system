@@ -1,5 +1,6 @@
 package com.github.ppj789.booking.identity.service;
 
+import com.github.ppj789.booking.identity.exception.InvalidAccountInputException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -15,7 +16,7 @@ public final class AccountInputNormalizer {
     public static String displayName(String input) {
         String normalized = input == null ? "" : input.trim();
         if (normalized.isEmpty() || normalized.length() > MAX_DISPLAY_NAME_LENGTH) {
-            throw new IllegalArgumentException("Display name must contain between 1 and 100 characters");
+            throw new InvalidAccountInputException("Display name must contain between 1 and 100 characters");
         }
         return normalized;
     }
@@ -25,7 +26,7 @@ public final class AccountInputNormalizer {
         if (normalized.length() < 3
                 || normalized.length() > MAX_EMAIL_LENGTH
                 || !EMAIL_SHAPE.matcher(normalized).matches()) {
-            throw new IllegalArgumentException("Email address is invalid");
+            throw new InvalidAccountInputException("Email address is invalid");
         }
         return normalized;
     }

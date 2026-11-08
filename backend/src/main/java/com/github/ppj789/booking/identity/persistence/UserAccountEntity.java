@@ -123,4 +123,16 @@ public class UserAccountEntity {
         this.updatedAt = activatedAt;
     }
 
+    public void deactivate(Instant deactivatedAt) {
+        if (accountType != AccountType.STAFF) {
+            throw new IllegalStateException("Only Staff accounts can be deactivated");
+        }
+        if (accountStatus == AccountStatus.DEACTIVATED) {
+            return;
+        }
+        this.accountStatus = AccountStatus.DEACTIVATED;
+        this.deactivatedAt = deactivatedAt;
+        this.updatedAt = deactivatedAt;
+    }
+
 }

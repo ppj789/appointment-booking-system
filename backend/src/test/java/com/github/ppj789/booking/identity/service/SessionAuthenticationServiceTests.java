@@ -34,6 +34,7 @@ class SessionAuthenticationServiceTests {
                 Duration.ofHours(24),
                 Duration.ofHours(8),
                 loginLimit,
+                new RateLimit(10, Duration.ofMinutes(5)),
                 new RateLimit(10, Duration.ofMinutes(5)));
         AuthenticatedAccountPrincipal principal = new AuthenticatedAccountPrincipal(
                 UUID.randomUUID(),

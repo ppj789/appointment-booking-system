@@ -12,4 +12,9 @@ public interface CredentialSetupRepository extends JpaRepository<CredentialSetup
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = {"userAccount", "userAccount.branch"})
     Optional<CredentialSetupEntity> findByTokenHash(String tokenHash);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<CredentialSetupEntity> findByUserAccountIdAndStatus(
+            UUID accountId,
+            CredentialSetupStatus status);
 }

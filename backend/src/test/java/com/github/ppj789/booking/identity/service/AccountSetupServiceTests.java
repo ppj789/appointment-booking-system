@@ -108,6 +108,7 @@ class AccountSetupServiceTests {
                 Duration.ofHours(24),
                 Duration.ofHours(8),
                 new RateLimit(10, Duration.ofMinutes(5)),
+                new RateLimit(10, Duration.ofMinutes(5)),
                 new RateLimit(10, Duration.ofMinutes(5)));
     }
 }
