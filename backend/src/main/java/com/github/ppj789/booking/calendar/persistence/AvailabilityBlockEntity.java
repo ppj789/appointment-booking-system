@@ -25,4 +25,12 @@ public class AvailabilityBlockEntity {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id", nullable = false)
     private CalendarReservationEntity reservation;
+
+    private AvailabilityBlockEntity(CalendarReservationEntity reservation) {
+        this.reservation = reservation;
+    }
+
+    public static AvailabilityBlockEntity create(CalendarReservationEntity reservation) {
+        return new AvailabilityBlockEntity(reservation);
+    }
 }

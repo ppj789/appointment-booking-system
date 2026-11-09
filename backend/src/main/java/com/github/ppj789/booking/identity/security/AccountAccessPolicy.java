@@ -16,4 +16,13 @@ public final class AccountAccessPolicy {
             throw new AccessDeniedException("Active Admin access is required");
         }
     }
+
+    public static void requireActiveStaff(AuthenticatedAccountPrincipal principal) {
+        if (principal == null
+                || principal.accountType() != AccountType.STAFF
+                || principal.status() != AccountStatus.ACTIVE
+                || principal.branch() == null) {
+            throw new AccessDeniedException("Active Staff access is required");
+        }
+    }
 }

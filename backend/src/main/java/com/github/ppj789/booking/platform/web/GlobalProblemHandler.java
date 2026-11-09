@@ -1,5 +1,9 @@
 package com.github.ppj789.booking.platform.web;
 
+import com.github.ppj789.booking.calendar.exception.AvailabilityBlockNotFoundException;
+import com.github.ppj789.booking.calendar.exception.AvailabilityBlockNotRemovableException;
+import com.github.ppj789.booking.calendar.exception.CalendarConflictException;
+import com.github.ppj789.booking.calendar.exception.InvalidCalendarIntervalException;
 import com.github.ppj789.booking.identity.exception.BranchUnavailableException;
 import com.github.ppj789.booking.identity.exception.DuplicateStaffEmailException;
 import com.github.ppj789.booking.identity.exception.InvalidAccountInputException;
@@ -23,6 +27,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -108,10 +113,43 @@ public class GlobalProblemHandler {
                 request);
     }
 
+    @ExceptionHandler(AvailabilityBlockNotFoundException.class)
+    public ResponseEntity<ProblemDetail> availabilityBlockNotFound(HttpServletRequest request) {
+        return response(
+                HttpStatus.NOT_FOUND,
+                "Availability Block is unavailable",
+                "The selected Availability Block is unavailable.",
+                "BLOCK_NOT_FOUND",
+                request);
+    }
+
+    @ExceptionHandler(CalendarConflictException.class)
+    public ResponseEntity<ProblemDetail> calendarConflict(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Calendar interval is unavailable",
+                "The requested interval overlaps existing calendar occupancy.",
+                "CALENDAR_CONFLICT",
+                request);
+    }
+
+    @ExceptionHandler(AvailabilityBlockNotRemovableException.class)
+    public ResponseEntity<ProblemDetail> availabilityBlockNotRemovable(
+            HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Availability Block cannot be removed",
+                "Only a future Availability Block can be removed.",
+                "BLOCK_NOT_REMOVABLE",
+                request);
+    }
+
     @ExceptionHandler({
         InvalidAccountInputException.class,
+        InvalidCalendarIntervalException.class,
         InvalidPasswordException.class,
-        MethodArgumentNotValidException.class
+        MethodArgumentNotValidException.class,
+        HandlerMethodValidationException.class
     })
     public ResponseEntity<ProblemDetail> validationFailed(HttpServletRequest request) {
         return response(
