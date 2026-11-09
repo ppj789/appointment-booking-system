@@ -21,6 +21,12 @@ import org.springframework.context.annotation.Configuration;
         in = SecuritySchemeIn.HEADER,
         paramName = "X-Setup-Token",
         description = "Single-use Staff setup capability read from the frontend URL fragment")
+@SecurityScheme(
+        name = "invitationToken",
+        type = SecuritySchemeType.APIKEY,
+        in = SecuritySchemeIn.HEADER,
+        paramName = "X-Invitation-Token",
+        description = "Single-use Guest capability read from the frontend URL fragment")
 @OpenAPIDefinition(
         info = @Info(
                 title = "Appointment Booking API",
