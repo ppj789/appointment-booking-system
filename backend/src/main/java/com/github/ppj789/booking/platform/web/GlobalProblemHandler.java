@@ -13,11 +13,17 @@ import com.github.ppj789.booking.identity.exception.SetupUnavailableException;
 import com.github.ppj789.booking.identity.exception.StaffDeactivationBlockedException;
 import com.github.ppj789.booking.identity.exception.StaffSetupConflictException;
 import com.github.ppj789.booking.identity.exception.StaffUnavailableException;
+import com.github.ppj789.booking.invitation.exception.InvalidInvitationInputException;
+import com.github.ppj789.booking.invitation.exception.InvitationNotActivatableException;
+import com.github.ppj789.booking.invitation.exception.InvitationNotEditableException;
+import com.github.ppj789.booking.invitation.exception.InvitationNotFoundException;
+import com.github.ppj789.booking.invitation.exception.InvitationNotRevocableException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -31,6 +37,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 
 @RestControllerAdvice
 @RequiredArgsConstructor
+@Slf4j
 public class GlobalProblemHandler {
 
     private static final String PROBLEM_TYPE_PREFIX = "urn:problem:appointment-booking:";
@@ -144,9 +151,50 @@ public class GlobalProblemHandler {
                 request);
     }
 
+    @ExceptionHandler(InvitationNotFoundException.class)
+    public ResponseEntity<ProblemDetail> invitationNotFound(HttpServletRequest request) {
+        return response(
+                HttpStatus.NOT_FOUND,
+                "Invitation is unavailable",
+                "The selected Invitation is unavailable.",
+                "INVITATION_NOT_FOUND",
+                request);
+    }
+
+    @ExceptionHandler(InvitationNotEditableException.class)
+    public ResponseEntity<ProblemDetail> invitationNotEditable(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Invitation cannot be edited",
+                "Only a draft Invitation can be edited.",
+                "INVITATION_NOT_EDITABLE",
+                request);
+    }
+
+    @ExceptionHandler(InvitationNotActivatableException.class)
+    public ResponseEntity<ProblemDetail> invitationNotActivatable(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Invitation cannot be activated",
+                "Only a draft Invitation can be activated.",
+                "INVITATION_NOT_ACTIVATABLE",
+                request);
+    }
+
+    @ExceptionHandler(InvitationNotRevocableException.class)
+    public ResponseEntity<ProblemDetail> invitationNotRevocable(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Invitation cannot be revoked",
+                "Only an active unused Invitation can be revoked.",
+                "INVITATION_NOT_REVOCABLE",
+                request);
+    }
+
     @ExceptionHandler({
         InvalidAccountInputException.class,
         InvalidCalendarIntervalException.class,
+        InvalidInvitationInputException.class,
         InvalidPasswordException.class,
         MethodArgumentNotValidException.class,
         HandlerMethodValidationException.class
@@ -182,11 +230,44 @@ public class GlobalProblemHandler {
             String detail,
             String code,
             HttpServletRequest request) {
+        logKnownFailure(status, code, request);
+        return problem(status, title, detail, code, request);
+    }
+
+    private ResponseEntity<ProblemDetail> problem(
+            HttpStatus status,
+            String title,
+            String detail,
+            String code,
+            HttpServletRequest request) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
         problem.setTitle(title);
         problem.setType(URI.create(PROBLEM_TYPE_PREFIX + code.toLowerCase().replace('_', '-')));
         problem.setInstance(URI.create(request.getRequestURI()));
         problem.setProperty("code", code);
         return ResponseEntity.status(status).body(problem);
+    }
+
+    private void logKnownFailure(
+            HttpStatus status,
+            String code,
+            HttpServletRequest request) {
+        if (status == HttpStatus.UNAUTHORIZED
+                || status == HttpStatus.FORBIDDEN
+                || status == HttpStatus.TOO_MANY_REQUESTS) {
+            log.warn(
+                    "Request rejected status={} code={} method={} path={}",
+                    status.value(),
+                    code,
+                    request.getMethod(),
+                    request.getRequestURI());
+            return;
+        }
+        log.info(
+                "Request rejected status={} code={} method={} path={}",
+                status.value(),
+                code,
+                request.getMethod(),
+                request.getRequestURI());
     }
 }

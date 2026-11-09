@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, and a private Staff calendar with Availability Block management. Invitation and booking behaviour follows in later increments.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, and the Staff Invitation lifecycle. Guest availability and booking behaviour follow in later increments.
 
 ## Technology baseline
 
@@ -123,6 +123,31 @@ After signing in as active Staff, Swagger UI can demonstrate the private calenda
 
 The account ID and Branch scope come from the authenticated session; they are never accepted from the request. Calendar reads expose the owning Staff User's Appointment summary and private block intervals only. PostgreSQL's shared reservation exclusion constraint remains authoritative for overlap races.
 
+### Exercise the Staff Invitation lifecycle locally
+
+After signing in as active Staff, Swagger UI can demonstrate the private Invitation lifecycle:
+
+1. Call `POST /api/v1/me/invitations` to create a draft:
+
+   ```json
+   {
+     "title": "Account discussion",
+     "description": "Review the available account options.",
+     "guest": {
+       "displayName": "Alex Guest",
+       "email": "alex.guest@example.test"
+     },
+     "defaultDurationMinutes": 60
+   }
+   ```
+
+2. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
+3. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
+4. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
+5. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
+
+The backend derives immutable Staff and Branch ownership from the authenticated session. Activation uses a locked state transition, stores only a SHA-256 token hash, and returns the high-entropy capability in the URL fragment with `Cache-Control: no-store`. Drafts alone are editable, and only unused active Invitations are revocable.
+
 Stop the stack while preserving the database volume:
 
 ```bash
@@ -182,13 +207,14 @@ The default local credentials are intentionally fake and may be overridden throu
 
 ## Security posture
 
-- Login and one-time Staff account setup are public capability endpoints; Admin operations require a server-managed authenticated session and active Admin workflow type.
+- Login and one-time Staff account setup are public capability endpoints; Admin and Staff operations require a server-managed authenticated session and the matching active workflow type.
 - Session cookies are HttpOnly and SameSite Lax. Authenticated mutations retain SPA CSRF protection.
 - Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
 - Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
-- Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged.
+- Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
+- The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, and path. An outer request filter logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular Staff calendar experience, Invitation behaviour, Guest availability, and Appointment confirmation are not implemented yet.
+Public registration is intentionally unavailable. The Angular Staff calendar and Invitation experiences, Guest Invitation access and availability, and Appointment confirmation are not implemented yet.

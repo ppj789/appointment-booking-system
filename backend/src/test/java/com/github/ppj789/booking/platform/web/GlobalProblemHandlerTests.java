@@ -101,4 +101,5 @@ class GlobalProblemHandlerTests {
                 "BLOCK_NOT_REMOVABLE",
                 notRemovable.getBody().getProperties().get("code"));
     }
+
 }
