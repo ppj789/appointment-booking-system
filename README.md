@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch reference queries, Branch-bound Staff provisioning, one-time Staff account setup, and safe Staff deactivation. Calendar and booking behaviour follows in later increments.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, and a private Staff calendar with Availability Block management. Invitation and booking behaviour follows in later increments.
 
 ## Technology baseline
 
@@ -103,6 +103,26 @@ Swagger UI can demonstrate the implemented Admin and Staff setup flow:
 
 The setup URL is returned once with `Cache-Control: no-store`; only its SHA-256 hash is persisted. Reusing a consumed token returns the same generic unavailable response as an invalid, expired, or revoked token.
 
+### Exercise Staff Availability Blocks locally
+
+After signing in as active Staff, Swagger UI can demonstrate the private calendar boundary:
+
+1. Call `GET /api/v1/me/calendar` with required UTC `from` and `to` instants no more than 31 days apart.
+2. Call `POST /api/v1/me/availability-blocks` with future UTC boundaries on the 15-minute grid:
+
+   ```json
+   {
+     "startAt": "replace-with-a-future-15-minute-boundary",
+     "endAt": "replace-with-a-later-15-minute-boundary"
+   }
+   ```
+
+3. Read the calendar again and confirm the returned block uses the committed UTC interval.
+4. Attempt an overlapping block and confirm the safe `409 CALENDAR_CONFLICT` response.
+5. Call `DELETE /api/v1/me/availability-blocks/{blockId}` while the block remains in the future.
+
+The account ID and Branch scope come from the authenticated session; they are never accepted from the request. Calendar reads expose the owning Staff User's Appointment summary and private block intervals only. PostgreSQL's shared reservation exclusion constraint remains authoritative for overlap races.
+
 Stop the stack while preserving the database volume:
 
 ```bash
@@ -166,8 +186,9 @@ The default local credentials are intentionally fake and may be overridden throu
 - Session cookies are HttpOnly and SameSite Lax. Authenticated mutations retain SPA CSRF protection.
 - Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
+- Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged.
 
 ## Current limitation
 
-Public registration is intentionally unavailable. Staff calendars, Availability Block commands, Invitation behaviour, Guest availability, and Appointment confirmation are not implemented yet.
+Public registration is intentionally unavailable. The Angular Staff calendar experience, Invitation behaviour, Guest availability, and Appointment confirmation are not implemented yet.

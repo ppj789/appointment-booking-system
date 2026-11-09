@@ -49,4 +49,42 @@ public class CalendarReservationEntity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    private CalendarReservationEntity(
+            BranchEntity branch,
+            UserAccountEntity staffUser,
+            CalendarReservationKind kind,
+            Instant startsAt,
+            Instant endsAt,
+            Instant createdAt) {
+        this.branch = branch;
+        this.staffUser = staffUser;
+        this.kind = kind;
+        this.startsAt = startsAt;
+        this.endsAt = endsAt;
+        this.createdAt = createdAt;
+    }
+
+    public static CalendarReservationEntity block(
+            BranchEntity branch,
+            UserAccountEntity staffUser,
+            Instant startsAt,
+            Instant endsAt,
+            Instant createdAt) {
+        return new CalendarReservationEntity(
+                branch,
+                staffUser,
+                CalendarReservationKind.BLOCK,
+                startsAt,
+                endsAt,
+                createdAt);
+    }
+
+    public Instant getStartsAt() {
+        return startsAt;
+    }
+
+    public Instant getEndsAt() {
+        return endsAt;
+    }
 }

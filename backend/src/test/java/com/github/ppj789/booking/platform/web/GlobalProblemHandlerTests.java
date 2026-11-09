@@ -79,4 +79,26 @@ class GlobalProblemHandlerTests {
         assertEquals(true, blocked.getBody().getProperties().get("activeInvitation"));
         assertEquals(false, blocked.getBody().getProperties().get("futureAppointment"));
     }
+
+    @Test
+    void returnsStableCalendarProblemsWithoutOccupancyDetails() {
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST",
+                "/api/v1/me/availability-blocks");
+
+        ResponseEntity<ProblemDetail> conflict = handler.calendarConflict(request);
+        ResponseEntity<ProblemDetail> unavailable = handler.availabilityBlockNotFound(request);
+        ResponseEntity<ProblemDetail> notRemovable =
+                handler.availabilityBlockNotRemovable(request);
+
+        assertEquals(HttpStatus.CONFLICT, conflict.getStatusCode());
+        assertEquals("CALENDAR_CONFLICT", conflict.getBody().getProperties().get("code"));
+        assertFalse(conflict.getBody().getDetail().contains("Guest"));
+        assertEquals(HttpStatus.NOT_FOUND, unavailable.getStatusCode());
+        assertEquals("BLOCK_NOT_FOUND", unavailable.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.CONFLICT, notRemovable.getStatusCode());
+        assertEquals(
+                "BLOCK_NOT_REMOVABLE",
+                notRemovable.getBody().getProperties().get("code"));
+    }
 }
