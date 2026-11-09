@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class StaffCalendarService {
+
+    private static final String CALENDAR_OVERLAP_CONSTRAINT =
+            "ex_calendar_reservation_staff_time";
 
     private final AppointmentRepository appointmentRepository;
     private final AvailabilityBlockRepository availabilityBlockRepository;
@@ -43,6 +47,7 @@ public class StaffCalendarService {
             Instant to) {
         requireActiveStaff(actor);
         CalendarIntervalPolicy.validateQueryWindow(from, to);
+        loadActiveStaff(actor);
 
         List<CalendarAppointment> appointments = appointmentRepository
                 .findCalendarAppointments(actor.accountId(), from, to)
@@ -77,6 +82,9 @@ public class StaffCalendarService {
         try {
             reservationRepository.saveAndFlush(reservation);
         } catch (DataIntegrityViolationException conflict) {
+            if (!isCalendarOverlap(conflict)) {
+                throw conflict;
+            }
             throw new CalendarConflictException();
         }
 
@@ -88,6 +96,7 @@ public class StaffCalendarService {
     @Transactional
     public void removeBlock(AuthenticatedAccountPrincipal actor, UUID blockId) {
         requireActiveStaff(actor);
+        loadActiveStaff(actor);
         AvailabilityBlockEntity block = availabilityBlockRepository
                 .findOwnedByIdForUpdate(blockId, actor.accountId())
                 .orElseThrow(AvailabilityBlockNotFoundException::new);
@@ -109,6 +118,19 @@ public class StaffCalendarService {
                 .filter(account -> account.getBranch().getId().equals(actor.branch().id()))
                 .orElseThrow(() -> new AccessDeniedException("Active Staff access is required"));
         return staff;
+    }
+
+    private static boolean isCalendarOverlap(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolation
+                    && CALENDAR_OVERLAP_CONSTRAINT.equals(
+                            constraintViolation.getConstraintName())) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 
     private static CalendarAppointment toCalendarAppointment(AppointmentEntity appointment) {
