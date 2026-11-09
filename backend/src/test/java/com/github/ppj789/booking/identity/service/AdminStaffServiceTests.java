@@ -38,7 +38,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -66,21 +65,16 @@ class AdminStaffServiceTests {
             "1 Demo Street, Johannesburg",
             "Africa/Johannesburg");
 
-    private AdminStaffService service;
-
-    @BeforeEach
-    void setUp() {
-        service = new AdminStaffService(
-                userAccountRepository,
-                branchRepository,
-                credentialSetupRepository,
-                invitationRepository,
-                appointmentRepository,
-                credentialSetupIssuer,
-                rateLimiter,
-                properties,
-                Clock.fixed(NOW, ZoneOffset.UTC));
-    }
+    private final AdminStaffService service = new AdminStaffService(
+            userAccountRepository,
+            branchRepository,
+            credentialSetupRepository,
+            invitationRepository,
+            appointmentRepository,
+            credentialSetupIssuer,
+            rateLimiter,
+            properties,
+            Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
     void provisionsCanonicalPendingStaffAndReturnsTheOneTimeSetup() {
@@ -246,6 +240,8 @@ class AdminStaffServiceTests {
                 Duration.ofHours(8),
                 defaultLimit,
                 defaultLimit,
-                new RateLimit(20, Duration.ofMinutes(5)));
+                new RateLimit(20, Duration.ofMinutes(5)),
+                new RateLimit(30, Duration.ofMinutes(5)),
+                new RateLimit(120, Duration.ofMinutes(1)));
     }
 }

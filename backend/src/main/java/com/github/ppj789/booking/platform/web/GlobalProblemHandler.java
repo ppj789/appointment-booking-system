@@ -14,10 +14,12 @@ import com.github.ppj789.booking.identity.exception.StaffDeactivationBlockedExce
 import com.github.ppj789.booking.identity.exception.StaffSetupConflictException;
 import com.github.ppj789.booking.identity.exception.StaffUnavailableException;
 import com.github.ppj789.booking.invitation.exception.InvalidInvitationInputException;
+import com.github.ppj789.booking.invitation.exception.InvalidGuestAvailabilityException;
 import com.github.ppj789.booking.invitation.exception.InvitationNotActivatableException;
 import com.github.ppj789.booking.invitation.exception.InvitationNotEditableException;
 import com.github.ppj789.booking.invitation.exception.InvitationNotFoundException;
 import com.github.ppj789.booking.invitation.exception.InvitationNotRevocableException;
+import com.github.ppj789.booking.invitation.exception.InvitationUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Clock;
@@ -191,9 +193,20 @@ public class GlobalProblemHandler {
                 request);
     }
 
+    @ExceptionHandler(InvitationUnavailableException.class)
+    public ResponseEntity<ProblemDetail> invitationUnavailable(HttpServletRequest request) {
+        return response(
+                HttpStatus.NOT_FOUND,
+                "Invitation is unavailable",
+                "The Invitation cannot be used.",
+                "INVITATION_UNAVAILABLE",
+                request);
+    }
+
     @ExceptionHandler({
         InvalidAccountInputException.class,
         InvalidCalendarIntervalException.class,
+        InvalidGuestAvailabilityException.class,
         InvalidInvitationInputException.class,
         InvalidPasswordException.class,
         MethodArgumentNotValidException.class,

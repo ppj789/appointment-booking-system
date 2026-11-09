@@ -23,10 +23,7 @@ public class UnhandledExceptionLoggingFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
         try {
             filterChain.doFilter(request, response);
-        } catch (IOException | ServletException exception) {
-            logUnexpectedFailure(request, exception);
-            throw exception;
-        } catch (RuntimeException exception) {
+        } catch (IOException | ServletException | RuntimeException exception) {
             logUnexpectedFailure(request, exception);
             throw exception;
         }

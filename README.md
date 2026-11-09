@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, and the Staff Invitation lifecycle. Guest availability and booking behaviour follow in later increments.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, and privacy-safe Guest availability. Appointment confirmation follows in a later increment.
 
 ## Technology baseline
 
@@ -148,6 +148,17 @@ After signing in as active Staff, Swagger UI can demonstrate the private Invitat
 
 The backend derives immutable Staff and Branch ownership from the authenticated session. Activation uses a locked state transition, stores only a SHA-256 token hash, and returns the high-entropy capability in the URL fragment with `Cache-Control: no-store`. Drafts alone are editable, and only unused active Invitations are revocable.
 
+### Exercise Guest Invitation and availability access locally
+
+Use the raw value after `#token=` from the one-time Staff `shareUrl` as `X-Invitation-Token`:
+
+1. Call `GET /api/v1/guest/invitation` to read the Guest-safe appointment purpose, fixed Staff host, supported durations, and Branch context.
+2. Call `GET /api/v1/guest/availability` with a supported `durationMinutes`. Optional `from` values before backend time clamp forward, and `days` defaults to 14 with a maximum of 14.
+3. Confirm that returned slots are on the 15-minute UTC grid and omit every interval whose complete duration overlaps an Appointment or Availability Block.
+4. Repeat either request with an unknown, revoked, or consumed capability and confirm the same `404 INVITATION_UNAVAILABLE` response.
+
+Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen will later render missing intervals as unavailable in the Branch timezone.
+
 Stop the stack while preserving the database volume:
 
 ```bash
@@ -212,9 +223,10 @@ The default local credentials are intentionally fake and may be overridden throu
 - Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
 - Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
+- Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits, and expose selectable intervals without private occupancy details.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
 - The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, and path. An outer request filter logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular Staff calendar and Invitation experiences, Guest Invitation access and availability, and Appointment confirmation are not implemented yet.
+Public registration is intentionally unavailable. The Angular Staff and Guest experiences and Appointment confirmation are not implemented yet; Guest availability is currently an API-only read model and remains advisory until the booking transaction revalidates it.

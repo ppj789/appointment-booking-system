@@ -9,12 +9,18 @@ public record IdentitySecurityProperties(
         Duration absoluteSessionTimeout,
         RateLimit loginRateLimit,
         RateLimit setupRateLimit,
-        RateLimit provisioningRateLimit) {
+        RateLimit provisioningRateLimit,
+        RateLimit guestInvitationRateLimit,
+        RateLimit guestAvailabilityRateLimit) {
 
     public IdentitySecurityProperties {
         requirePositive(credentialSetupExpiry, "credential setup expiry");
         requirePositive(absoluteSessionTimeout, "absolute session timeout");
-        if (loginRateLimit == null || setupRateLimit == null || provisioningRateLimit == null) {
+        if (loginRateLimit == null
+                || setupRateLimit == null
+                || provisioningRateLimit == null
+                || guestInvitationRateLimit == null
+                || guestAvailabilityRateLimit == null) {
             throw new IllegalArgumentException("Identity rate limits must be configured");
         }
     }

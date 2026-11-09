@@ -44,6 +44,12 @@ booking:
     provisioning-rate-limit:
       attempts: ${BOOKING_PROVISIONING_RATE_LIMIT_ATTEMPTS:20}
       window: ${BOOKING_PROVISIONING_RATE_LIMIT_WINDOW:5m}
+    guest-invitation-rate-limit:
+      attempts: ${BOOKING_GUEST_INVITATION_RATE_LIMIT_ATTEMPTS:30}
+      window: ${BOOKING_GUEST_INVITATION_RATE_LIMIT_WINDOW:5m}
+    guest-availability-rate-limit:
+      attempts: ${BOOKING_GUEST_AVAILABILITY_RATE_LIMIT_ATTEMPTS:120}
+      window: ${BOOKING_GUEST_AVAILABILITY_RATE_LIMIT_WINDOW:1m}
 
 management:
   endpoints:
