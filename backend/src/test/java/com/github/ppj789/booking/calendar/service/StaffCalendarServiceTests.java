@@ -29,12 +29,14 @@ import com.github.ppj789.booking.identity.persistence.UserAccountRepository;
 import com.github.ppj789.booking.identity.security.AuthenticatedAccountPrincipal;
 import com.github.ppj789.booking.identity.security.AuthenticatedAccountPrincipal.BranchPrincipal;
 import com.github.ppj789.booking.invitation.persistence.InvitationEntity;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -69,6 +71,7 @@ class StaffCalendarServiceTests {
         Instant to = NOW.plusSeconds(3600);
         AppointmentEntity appointment = appointment();
         AvailabilityBlockEntity block = block(BLOCK_ID, STARTS_AT, ENDS_AT);
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
         when(appointmentRepository.findCalendarAppointments(STAFF_ID, from, to))
                 .thenReturn(List.of(appointment));
         when(blockRepository.findCalendarBlocks(STAFF_ID, from, to))
@@ -113,7 +116,7 @@ class StaffCalendarServiceTests {
     void translatesAnAuthoritativeReservationConflict() {
         when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
         when(reservationRepository.saveAndFlush(any(CalendarReservationEntity.class)))
-                .thenThrow(new DataIntegrityViolationException("exclusion conflict"));
+                .thenThrow(overlapViolation());
 
         CalendarConflictException exception = assertThrows(
                 CalendarConflictException.class,
@@ -126,7 +129,24 @@ class StaffCalendarServiceTests {
     }
 
     @Test
+    void doesNotHideAnUnexpectedDatabaseIntegrityFailure() {
+        DataIntegrityViolationException unexpected =
+                new DataIntegrityViolationException("unexpected integrity failure");
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
+        when(reservationRepository.saveAndFlush(any(CalendarReservationEntity.class)))
+                .thenThrow(unexpected);
+
+        DataIntegrityViolationException result = assertThrows(
+                DataIntegrityViolationException.class,
+                () -> service.createBlock(staffPrincipal(), STARTS_AT, ENDS_AT));
+
+        assertSame(unexpected, result);
+        verify(blockRepository, never()).saveAndFlush(any(AvailabilityBlockEntity.class));
+    }
+
+    @Test
     void hidesMissingAndCrossOwnerBlockIdsBehindTheSameFailure() {
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
         when(blockRepository.findOwnedByIdForUpdate(BLOCK_ID, STAFF_ID))
                 .thenReturn(Optional.empty());
 
@@ -141,6 +161,7 @@ class StaffCalendarServiceTests {
     @Test
     void removesTheSubtypeBeforeItsFutureReservation() {
         AvailabilityBlockEntity block = block(BLOCK_ID, STARTS_AT, ENDS_AT);
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
         when(blockRepository.findOwnedByIdForUpdate(BLOCK_ID, STAFF_ID))
                 .thenReturn(Optional.of(block));
 
@@ -155,6 +176,7 @@ class StaffCalendarServiceTests {
     @Test
     void refusesToRemoveABlockThatHasStarted() {
         AvailabilityBlockEntity block = block(BLOCK_ID, NOW, ENDS_AT);
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
         when(blockRepository.findOwnedByIdForUpdate(BLOCK_ID, STAFF_ID))
                 .thenReturn(Optional.of(block));
 
@@ -179,6 +201,21 @@ class StaffCalendarServiceTests {
         AccessDeniedException exception = assertThrows(
                 AccessDeniedException.class,
                 () -> service.getCalendar(admin, NOW, NOW.plusSeconds(3600)));
+
+        assertEquals("Active Staff access is required", exception.getMessage());
+        verifyNoInteractions(appointmentRepository, blockRepository);
+    }
+
+    @Test
+    void rejectsAnActiveSessionAfterTheStaffAccountIsDeactivated() {
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.empty());
+
+        AccessDeniedException exception = assertThrows(
+                AccessDeniedException.class,
+                () -> service.getCalendar(
+                        staffPrincipal(),
+                        NOW,
+                        NOW.plusSeconds(3600)));
 
         assertEquals("Active Staff access is required", exception.getMessage());
         verifyNoInteractions(appointmentRepository, blockRepository);
@@ -223,6 +260,14 @@ class StaffCalendarServiceTests {
                 NOW.minusSeconds(3600));
         staff.activate("encoded-password", NOW.minusSeconds(1800));
         return staff;
+    }
+
+    private DataIntegrityViolationException overlapViolation() {
+        ConstraintViolationException hibernateViolation = new ConstraintViolationException(
+                "calendar overlap",
+                new SQLException("calendar overlap"),
+                "ex_calendar_reservation_staff_time");
+        return new DataIntegrityViolationException("calendar overlap", hibernateViolation);
     }
 
     private AuthenticatedAccountPrincipal staffPrincipal() {
