@@ -80,6 +80,21 @@ public class CalendarReservationEntity {
                 createdAt);
     }
 
+    public static CalendarReservationEntity appointment(
+            BranchEntity branch,
+            UserAccountEntity staffUser,
+            Instant startsAt,
+            Instant endsAt,
+            Instant createdAt) {
+        return new CalendarReservationEntity(
+                branch,
+                staffUser,
+                CalendarReservationKind.APPOINTMENT,
+                startsAt,
+                endsAt,
+                createdAt);
+    }
+
     public Instant getStartsAt() {
         return startsAt;
     }

@@ -1,5 +1,10 @@
 package com.github.ppj789.booking.platform.web;
 
+import com.github.ppj789.booking.appointment.exception.AppointmentSlotOutsideHorizonException;
+import com.github.ppj789.booking.appointment.exception.IdempotencyKeyReusedException;
+import com.github.ppj789.booking.appointment.exception.InvalidAppointmentSlotException;
+import com.github.ppj789.booking.appointment.exception.SlotUnavailableException;
+import com.github.ppj789.booking.appointment.exception.UnsupportedAppointmentDurationException;
 import com.github.ppj789.booking.calendar.exception.AvailabilityBlockNotFoundException;
 import com.github.ppj789.booking.calendar.exception.AvailabilityBlockNotRemovableException;
 import com.github.ppj789.booking.calendar.exception.CalendarConflictException;
@@ -26,6 +31,7 @@ import java.time.Clock;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -200,6 +206,76 @@ public class GlobalProblemHandler {
                 "Invitation is unavailable",
                 "The Invitation cannot be used.",
                 "INVITATION_UNAVAILABLE",
+                request);
+    }
+
+    @ExceptionHandler(SlotUnavailableException.class)
+    public ResponseEntity<ProblemDetail> slotUnavailable(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Appointment time is unavailable",
+                "Choose another appointment time and try again.",
+                "SLOT_UNAVAILABLE",
+                request);
+    }
+
+    @ExceptionHandler(IdempotencyKeyReusedException.class)
+    public ResponseEntity<ProblemDetail> idempotencyKeyReused(HttpServletRequest request) {
+        return response(
+                HttpStatus.CONFLICT,
+                "Idempotency Key was already used",
+                "Use the original request or provide a new Idempotency Key.",
+                "IDEMPOTENCY_KEY_REUSED",
+                request);
+    }
+
+    @ExceptionHandler(AppointmentSlotOutsideHorizonException.class)
+    public ResponseEntity<ProblemDetail> appointmentOutsideHorizon(HttpServletRequest request) {
+        return response(
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "Appointment time is outside the booking horizon",
+                "Choose a future time that fits within the next 14 days.",
+                "SLOT_OUTSIDE_HORIZON",
+                request);
+    }
+
+    @ExceptionHandler(UnsupportedAppointmentDurationException.class)
+    public ResponseEntity<ProblemDetail> unsupportedAppointmentDuration(
+            HttpServletRequest request) {
+        return response(
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "Appointment duration is unsupported",
+                "Choose one of the supported Appointment durations.",
+                "UNSUPPORTED_DURATION",
+                request);
+    }
+
+    @ExceptionHandler(InvalidAppointmentSlotException.class)
+    public ResponseEntity<ProblemDetail> invalidAppointmentSlot(HttpServletRequest request) {
+        return response(
+                HttpStatus.UNPROCESSABLE_CONTENT,
+                "Appointment time is invalid",
+                "Choose an Appointment time on the 15-minute UTC grid.",
+                "INVALID_SLOT",
+                request);
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ProblemDetail> dataStoreUnavailable(
+            DataAccessException exception,
+            HttpServletRequest request) {
+        log.error(
+                "Request failed status={} code={} method={} path={}",
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "SERVICE_UNAVAILABLE",
+                request.getMethod(),
+                request.getRequestURI(),
+                exception);
+        return problem(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "Service is temporarily unavailable",
+                "Try the request again later.",
+                "SERVICE_UNAVAILABLE",
                 request);
     }
 

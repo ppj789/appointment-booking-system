@@ -102,4 +102,29 @@ class GlobalProblemHandlerTests {
                 notRemovable.getBody().getProperties().get("code"));
     }
 
+    @Test
+    void returnsStableAppointmentProblemsWithoutBookingDetails() {
+        MockHttpServletRequest request = new MockHttpServletRequest(
+                "POST",
+                "/api/v1/guest/appointments");
+
+        ResponseEntity<ProblemDetail> unavailable = handler.slotUnavailable(request);
+        ResponseEntity<ProblemDetail> reused = handler.idempotencyKeyReused(request);
+        ResponseEntity<ProblemDetail> horizon = handler.appointmentOutsideHorizon(request);
+        ResponseEntity<ProblemDetail> duration = handler.unsupportedAppointmentDuration(request);
+        ResponseEntity<ProblemDetail> invalidSlot = handler.invalidAppointmentSlot(request);
+
+        assertEquals(HttpStatus.CONFLICT, unavailable.getStatusCode());
+        assertEquals("SLOT_UNAVAILABLE", unavailable.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.CONFLICT, reused.getStatusCode());
+        assertEquals("IDEMPOTENCY_KEY_REUSED", reused.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, horizon.getStatusCode());
+        assertEquals("SLOT_OUTSIDE_HORIZON", horizon.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, duration.getStatusCode());
+        assertEquals("UNSUPPORTED_DURATION", duration.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, invalidSlot.getStatusCode());
+        assertEquals("INVALID_SLOT", invalidSlot.getBody().getProperties().get("code"));
+        assertFalse(unavailable.getBody().getDetail().contains("Alex Guest"));
+    }
+
 }

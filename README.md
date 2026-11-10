@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, and privacy-safe Guest availability. Appointment confirmation follows in a later increment.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
 
 ## Technology baseline
 
@@ -157,7 +157,24 @@ Use the raw value after `#token=` from the one-time Staff `shareUrl` as `X-Invit
 3. Confirm that returned slots are on the 15-minute UTC grid and omit every interval whose complete duration overlaps an Appointment or Availability Block.
 4. Repeat either request with an unknown, revoked, or consumed capability and confirm the same `404 INVITATION_UNAVAILABLE` response.
 
+To commit one of the returned slots:
+
+5. Generate a UUID and send it as `Idempotency-Key` with `POST /api/v1/guest/appointments`:
+
+   ```json
+   {
+     "startAt": "replace-with-a-returned-UTC-slot-start",
+     "durationMinutes": 60
+   }
+   ```
+
+6. Confirm the new request returns `201 Created`, the committed Appointment and Branch details, and the visible simulated confirmation.
+7. Repeat the identical request with the same UUID and capability. It returns the original result with `200 OK` and `Idempotency-Replayed: true` without creating another Appointment.
+8. Reuse that UUID with different input and confirm the safe `409 IDEMPOTENCY_KEY_REUSED` response.
+
 Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen will later render missing intervals as unavailable in the Branch timezone.
+
+Confirmation revalidates the capability, complete duration, 15-minute grid, and rolling horizon. PostgreSQL's shared exclusion constraint remains authoritative if another request occupies the slot concurrently. A successful transaction inserts the Reservation and immutable Appointment, consumes the Invitation, and only then returns the simulated confirmation. Conflicts create no partial booking and leave the Invitation usable.
 
 Stop the stack while preserving the database volume:
 
@@ -224,9 +241,10 @@ The default local credentials are intentionally fake and may be overridden throu
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
 - Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
 - Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits, and expose selectable intervals without private occupancy details.
+- Guest confirmation requires a client-generated UUID Idempotency Key. Identical retries replay the original committed result; key reuse with changed input is rejected, and concurrent calendar conflicts cannot consume the Invitation or expose existing booking details.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
 - The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, and path. An outer request filter logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular Staff and Guest experiences and Appointment confirmation are not implemented yet; Guest availability is currently an API-only read model and remains advisory until the booking transaction revalidates it.
+Public registration is intentionally unavailable. The Angular Staff and Guest experiences are not implemented yet, so the complete booking journey currently uses the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
