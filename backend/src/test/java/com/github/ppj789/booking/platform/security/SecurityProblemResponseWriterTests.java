@@ -2,14 +2,14 @@ package com.github.ppj789.booking.platform.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.ppj789.booking.platform.web.RequestObservabilityFilter;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 class SecurityProblemResponseWriterTests {
 
@@ -30,9 +30,9 @@ class SecurityProblemResponseWriterTests {
         JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
         assertEquals(HttpStatus.UNAUTHORIZED.value(), response.getStatus());
         assertEquals(MediaType.APPLICATION_PROBLEM_JSON_VALUE, response.getContentType());
-        assertEquals("AUTHENTICATION_REQUIRED", body.get("code").textValue());
-        assertEquals(CORRELATION_ID, body.get("correlationId").textValue());
-        assertEquals("/api/v1/me/calendar", body.get("instance").textValue());
+        assertEquals("AUTHENTICATION_REQUIRED", body.get("code").stringValue());
+        assertEquals(CORRELATION_ID, body.get("correlationId").stringValue());
+        assertEquals("/api/v1/me/calendar", body.get("instance").stringValue());
     }
 
     @Test
@@ -44,8 +44,8 @@ class SecurityProblemResponseWriterTests {
 
         JsonNode body = objectMapper.readTree(response.getContentAsByteArray());
         assertEquals(HttpStatus.FORBIDDEN.value(), response.getStatus());
-        assertEquals("ACCESS_DENIED", body.get("code").textValue());
-        assertEquals(CORRELATION_ID, body.get("correlationId").textValue());
+        assertEquals("ACCESS_DENIED", body.get("code").stringValue());
+        assertEquals(CORRELATION_ID, body.get("correlationId").stringValue());
     }
 
     private MockHttpServletRequest request() {

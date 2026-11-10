@@ -1,6 +1,5 @@
 package com.github.ppj789.booking.platform.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.ppj789.booking.platform.web.ApiProblemDetails;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -10,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
