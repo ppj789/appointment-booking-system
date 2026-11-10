@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.identity.config.IdentitySecurityProperties;
 import com.github.ppj789.booking.identity.config.IdentitySecurityProperties.RateLimit;
 import com.github.ppj789.booking.identity.exception.SetupUnavailableException;
@@ -15,7 +14,6 @@ import com.github.ppj789.booking.identity.persistence.AccountType;
 import com.github.ppj789.booking.identity.persistence.CredentialSetupEntity;
 import com.github.ppj789.booking.identity.persistence.CredentialSetupRepository;
 import com.github.ppj789.booking.identity.persistence.UserAccountEntity;
-import com.github.ppj789.booking.identity.security.AuthenticatedAccountPrincipal;
 import com.github.ppj789.booking.identity.security.FixedWindowRateLimiter;
 import com.github.ppj789.booking.identity.security.SecretHasher;
 import java.time.Clock;
@@ -23,7 +21,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -39,7 +36,6 @@ class AccountSetupServiceTests {
         FixedWindowRateLimiter rateLimiter = mock(FixedWindowRateLimiter.class);
         CredentialSetupEntity setup = mock(CredentialSetupEntity.class);
         UserAccountEntity account = mock(UserAccountEntity.class);
-        BranchEntity branch = mock(BranchEntity.class);
         IdentitySecurityProperties properties = properties();
         when(secretHasher.sha256("raw-token")).thenReturn("token-hash");
         when(repository.findByTokenHash("token-hash")).thenReturn(Optional.of(setup));
@@ -47,15 +43,6 @@ class AccountSetupServiceTests {
         when(setup.getUserAccount()).thenReturn(account);
         when(account.getAccountType()).thenReturn(AccountType.STAFF);
         when(account.getAccountStatus()).thenReturn(AccountStatus.PENDING_SETUP);
-        when(account.getId()).thenReturn(UUID.randomUUID());
-        when(account.getDisplayName()).thenReturn("Staff User");
-        when(account.getEmail()).thenReturn("staff@example.test");
-        when(account.getBranch()).thenReturn(branch);
-        when(branch.getId()).thenReturn(UUID.randomUUID());
-        when(branch.getPublicCode()).thenReturn("JHB-DEMO");
-        when(branch.getName()).thenReturn("Johannesburg Demo Branch");
-        when(branch.getDisplayAddress()).thenReturn("1 Demo Street, Johannesburg");
-        when(branch.getTimezone()).thenReturn("Africa/Johannesburg");
         when(passwordEncoder.encode("valid-password")).thenReturn("encoded-password");
         AccountSetupService service = new AccountSetupService(
                 repository,
@@ -65,13 +52,11 @@ class AccountSetupServiceTests {
                 properties,
                 Clock.fixed(NOW, ZoneOffset.UTC));
 
-        AuthenticatedAccountPrincipal principal = service.complete("raw-token", "valid-password");
+        service.complete("raw-token", "valid-password");
 
         verify(rateLimiter).requirePermit("account-setup", "raw-token", properties.setupRateLimit());
         verify(account).activate("encoded-password", NOW);
         verify(setup).consume(NOW);
-        assertEquals("staff@example.test", principal.email());
-        assertEquals("JHB-DEMO", principal.branch().publicCode());
     }
 
     @Test

@@ -5,16 +5,19 @@ import com.github.ppj789.booking.invitation.service.StaffInvitationService;
 import com.github.ppj789.booking.invitation.service.StaffInvitationService.InvitationActivation;
 import com.github.ppj789.booking.invitation.service.StaffInvitationService.InvitationDraft;
 import com.github.ppj789.booking.invitation.service.StaffInvitationService.InvitationRevocation;
+import com.github.ppj789.booking.invitation.service.StaffInvitationService.InvitationSummary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +34,20 @@ public class StaffInvitationController {
 
     private final StaffInvitationService invitationService;
     private final InvitationShareLinkFactory shareLinkFactory;
+
+    @GetMapping
+    @Operation(summary = "List owned Invitations", description = "Returns no capability values or share URLs.")
+    @ApiResponse(responseCode = "200", description = "Owned Invitations returned")
+    @ApiResponse(responseCode = "403", description = "Active Staff access is required")
+    public ResponseEntity<List<InvitationSummaryResponse>> list(
+            @AuthenticationPrincipal AuthenticatedAccountPrincipal actor) {
+        List<InvitationSummary> invitations = invitationService.list(actor);
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(invitations.stream()
+                        .map(InvitationSummaryResponse::from)
+                        .toList());
+    }
 
     @PostMapping
     @Operation(summary = "Create an Invitation draft")

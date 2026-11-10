@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/sessions", "/api/v1/account-setup")
                         .permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/sessions/current")
+                        .permitAll()
                         .requestMatchers("/api/v1/guest/**")
                         .permitAll()
                         .anyRequest()

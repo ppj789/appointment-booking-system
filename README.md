@@ -100,8 +100,9 @@ Swagger UI can demonstrate the implemented Admin and Staff setup flow:
    ```
 
 4. Copy the value after `#token=` from the one-time `setupUrl` response.
-5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters.
+5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters. A successful `204 No Content` activates the account but does not create a session.
 6. Log out the Admin, then sign in with the new Staff email and password.
+7. Call `GET /api/v1/sessions/current` to read the safe account, workflow type, and Branch context used to bootstrap the frontend session state.
 
 The setup URL is returned once with `Cache-Control: no-store`; only its SHA-256 hash is persisted. Reusing a consumed token returns the same generic unavailable response as an invalid, expired, or revoked token.
 
@@ -129,7 +130,8 @@ The account ID and Branch scope come from the authenticated session; they are ne
 
 After signing in as active Staff, Swagger UI can demonstrate the private Invitation lifecycle:
 
-1. Call `POST /api/v1/me/invitations` to create a draft:
+1. Call `GET /api/v1/me/invitations` to read the Staff-owned Invitation lifecycle state. Capability values and previously returned share links are never included.
+2. Call `POST /api/v1/me/invitations` to create a draft:
 
    ```json
    {
@@ -143,10 +145,10 @@ After signing in as active Staff, Swagger UI can demonstrate the private Invitat
    }
    ```
 
-2. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
-3. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
-4. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
-5. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
+3. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
+4. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
+5. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
+6. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
 
 The backend derives immutable Staff and Branch ownership from the authenticated session. Activation uses a locked state transition, stores only a SHA-256 token hash, and returns the high-entropy capability in the URL fragment with `Cache-Control: no-store`. Drafts alone are editable, and only unused active Invitations are revocable.
 
