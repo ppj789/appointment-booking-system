@@ -4,9 +4,6 @@ import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationRepository;
 import com.github.ppj789.booking.identity.config.IdentitySecurityProperties;
-import com.github.ppj789.booking.identity.persistence.AccountStatus;
-import com.github.ppj789.booking.identity.persistence.AccountType;
-import com.github.ppj789.booking.identity.persistence.UserAccountEntity;
 import com.github.ppj789.booking.identity.security.FixedWindowRateLimiter;
 import com.github.ppj789.booking.identity.security.SecretHasher;
 import com.github.ppj789.booking.invitation.exception.InvitationUnavailableException;
@@ -86,9 +83,13 @@ public class GuestInvitationService {
             throw new InvitationUnavailableException();
         }
         String tokenHash = secretHasher.sha256(rawToken);
-        return invitationRepository.findByTokenHashAndStatus(tokenHash, InvitationStatus.ACTIVE)
-                .filter(GuestInvitationService::hasActiveBookingContext)
+        InvitationEntity invitation = invitationRepository
+                .findByTokenHashAndStatus(tokenHash, InvitationStatus.ACTIVE)
                 .orElseThrow(InvitationUnavailableException::new);
+        if (!invitation.isBookable()) {
+            throw new InvitationUnavailableException();
+        }
+        return invitation;
     }
 
     private String availabilityRateLimitKey(String rawToken, String clientKey) {
@@ -96,16 +97,6 @@ public class GuestInvitationService {
                 ? "invalid"
                 : rawToken;
         return clientKey + ':' + boundedToken;
-    }
-
-    private static boolean hasActiveBookingContext(InvitationEntity invitation) {
-        BranchEntity branch = invitation.getBranch();
-        UserAccountEntity staff = invitation.getStaffUser();
-        return branch.isActive()
-                && staff.getAccountType() == AccountType.STAFF
-                && staff.getAccountStatus() == AccountStatus.ACTIVE
-                && staff.getBranch() != null
-                && staff.getBranch().getId().equals(branch.getId());
     }
 
     private static OccupiedInterval toOccupiedInterval(CalendarReservationEntity reservation) {

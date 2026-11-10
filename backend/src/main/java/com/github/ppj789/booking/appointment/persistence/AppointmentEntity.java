@@ -58,4 +58,37 @@ public class AppointmentEntity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    private AppointmentEntity(
+            CalendarReservationEntity reservation,
+            InvitationEntity invitation,
+            String publicReference,
+            UUID idempotencyKey,
+            String requestFingerprint,
+            Instant createdAt) {
+        this.reservation = reservation;
+        this.invitation = invitation;
+        this.branch = invitation.getBranch();
+        this.staffUser = invitation.getStaffUser();
+        this.publicReference = publicReference;
+        this.idempotencyKey = idempotencyKey;
+        this.requestFingerprint = requestFingerprint;
+        this.createdAt = createdAt;
+    }
+
+    public static AppointmentEntity create(
+            CalendarReservationEntity reservation,
+            InvitationEntity invitation,
+            String publicReference,
+            UUID idempotencyKey,
+            String requestFingerprint,
+            Instant createdAt) {
+        return new AppointmentEntity(
+                reservation,
+                invitation,
+                publicReference,
+                idempotencyKey,
+                requestFingerprint,
+                createdAt);
+    }
 }

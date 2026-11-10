@@ -2,6 +2,8 @@ package com.github.ppj789.booking.invitation.persistence;
 
 import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.identity.persistence.UserAccountEntity;
+import com.github.ppj789.booking.identity.persistence.AccountStatus;
+import com.github.ppj789.booking.identity.persistence.AccountType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -153,5 +155,23 @@ public class InvitationEntity {
         this.status = InvitationStatus.REVOKED;
         this.revokedAt = revokedAt;
         this.updatedAt = revokedAt;
+    }
+
+    public void consume(Instant consumedAt) {
+        if (status != InvitationStatus.ACTIVE) {
+            throw new IllegalStateException("Only an active Invitation can be consumed");
+        }
+        this.status = InvitationStatus.CONSUMED;
+        this.consumedAt = consumedAt;
+        this.updatedAt = consumedAt;
+    }
+
+    public boolean isBookable() {
+        return status == InvitationStatus.ACTIVE
+                && branch.isActive()
+                && staffUser.getAccountType() == AccountType.STAFF
+                && staffUser.getAccountStatus() == AccountStatus.ACTIVE
+                && staffUser.getBranch() != null
+                && staffUser.getBranch().getId().equals(branch.getId());
     }
 }

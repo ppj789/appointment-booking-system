@@ -12,6 +12,9 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
 
     boolean existsByStaffUserIdAndReservationStartsAtAfter(UUID staffId, Instant now);
 
+    @EntityGraph(attributePaths = {"reservation", "invitation", "branch", "staffUser"})
+    java.util.Optional<AppointmentEntity> findByIdempotencyKey(UUID idempotencyKey);
+
     @EntityGraph(attributePaths = {"reservation", "invitation"})
     @Query("""
             select appointment

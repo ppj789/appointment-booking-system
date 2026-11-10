@@ -18,6 +18,11 @@ public interface InvitationRepository extends JpaRepository<InvitationEntity, UU
             String tokenHash,
             InvitationStatus status);
 
+    @EntityGraph(attributePaths = {"branch", "staffUser"})
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select invitation from InvitationEntity invitation where invitation.tokenHash = :tokenHash")
+    Optional<InvitationEntity> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select invitation
