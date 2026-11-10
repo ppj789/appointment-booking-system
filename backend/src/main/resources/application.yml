@@ -5,9 +5,9 @@ spring:
     exclude:
       - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${BOOKING_DB_URL:jdbc:postgresql://localhost:5432/appointment_booking}
-    username: ${BOOKING_DB_USERNAME:booking_app}
-    password: ${BOOKING_DB_PASSWORD:local_booking_password}
+    url: ${BOOKING_DB_URL}
+    username: ${BOOKING_DB_USERNAME}
+    password: ${BOOKING_DB_PASSWORD}
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -15,6 +15,10 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+    time-zone: UTC
   lifecycle:
     timeout-per-shutdown-phase: 20s
   mvc:
@@ -22,6 +26,12 @@ spring:
       enabled: true
 
 server:
+  error:
+    include-binding-errors: never
+    include-exception: false
+    include-message: never
+    include-stacktrace: never
+  max-http-request-header-size: 16KB
   shutdown: graceful
   servlet:
     session:
@@ -50,22 +60,30 @@ booking:
     guest-availability-rate-limit:
       attempts: ${BOOKING_GUEST_AVAILABILITY_RATE_LIMIT_ATTEMPTS:120}
       window: ${BOOKING_GUEST_AVAILABILITY_RATE_LIMIT_WINDOW:1m}
+    guest-confirmation-rate-limit:
+      attempts: ${BOOKING_GUEST_CONFIRMATION_RATE_LIMIT_ATTEMPTS:10}
+      window: ${BOOKING_GUEST_CONFIRMATION_RATE_LIMIT_WINDOW:1m}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health
   endpoint:
     health:
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db
       probes:
         enabled: true
       show-details: never
 
-info:
-  app:
-    name: Appointment Booking API
-    description: Full-stack assessment foundation
+logging:
+  structured:
+    format:
+      console: logstash
 
 springdoc:
   packages-to-scan: com.github.ppj789.booking

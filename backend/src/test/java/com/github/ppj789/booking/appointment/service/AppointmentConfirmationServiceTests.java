@@ -21,7 +21,10 @@ import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationKind;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationRepository;
+import com.github.ppj789.booking.identity.config.IdentitySecurityProperties;
+import com.github.ppj789.booking.identity.config.IdentitySecurityProperties.RateLimit;
 import com.github.ppj789.booking.identity.persistence.UserAccountEntity;
+import com.github.ppj789.booking.identity.security.FixedWindowRateLimiter;
 import com.github.ppj789.booking.identity.security.SecretHasher;
 import com.github.ppj789.booking.invitation.exception.InvitationUnavailableException;
 import com.github.ppj789.booking.invitation.persistence.InvitationEntity;
@@ -29,6 +32,7 @@ import com.github.ppj789.booking.invitation.persistence.InvitationRepository;
 import com.github.ppj789.booking.invitation.persistence.InvitationStatus;
 import java.sql.SQLException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Optional;
@@ -59,12 +63,16 @@ class AppointmentConfirmationServiceTests {
     private final InvitationRepository invitationRepository = mock(InvitationRepository.class);
     private final AppointmentReferenceIssuer referenceIssuer = mock(AppointmentReferenceIssuer.class);
     private final SecretHasher secretHasher = new SecretHasher();
+    private final FixedWindowRateLimiter rateLimiter = mock(FixedWindowRateLimiter.class);
+    private final IdentitySecurityProperties securityProperties = securityProperties();
     private final AppointmentConfirmationService service = new AppointmentConfirmationService(
             appointmentRepository,
             reservationRepository,
             invitationRepository,
             referenceIssuer,
             secretHasher,
+            rateLimiter,
+            securityProperties,
             Clock.fixed(NOW, ZoneOffset.UTC));
 
     @Test
@@ -113,6 +121,10 @@ class AppointmentConfirmationServiceTests {
         assertEquals(CalendarReservationKind.APPOINTMENT, reservationCaptor.getValue().getKind());
         assertSame(invitation, appointmentCaptor.getValue().getInvitation());
         assertEquals(IDEMPOTENCY_KEY, appointmentCaptor.getValue().getIdempotencyKey());
+        verify(rateLimiter).requirePermit(
+                "guest-confirmation",
+                RAW_TOKEN,
+                securityProperties.guestConfirmationRateLimit());
     }
 
     @Test
@@ -138,7 +150,7 @@ class AppointmentConfirmationServiceTests {
         when(appointmentRepository.findByIdempotencyKey(IDEMPOTENCY_KEY))
                 .thenReturn(Optional.of(committedAppointment()));
 
-        assertThrows(
+        IdempotencyKeyReusedException exception = assertThrows(
                 IdempotencyKeyReusedException.class,
                 () -> service.confirm(
                         RAW_TOKEN,
@@ -146,6 +158,9 @@ class AppointmentConfirmationServiceTests {
                         STARTS_AT.plusSeconds(900),
                         60));
 
+        assertEquals(
+                "The Idempotency Key was already used for a different request",
+                exception.getMessage());
         verifyNoInteractions(reservationRepository, invitationRepository, referenceIssuer);
     }
 
@@ -177,10 +192,11 @@ class AppointmentConfirmationServiceTests {
         when(reservationRepository.saveAndFlush(any(CalendarReservationEntity.class)))
                 .thenThrow(overlapViolation());
 
-        assertThrows(
+        SlotUnavailableException exception = assertThrows(
                 SlotUnavailableException.class,
                 () -> service.confirm(RAW_TOKEN, IDEMPOTENCY_KEY, STARTS_AT, 60));
 
+        assertEquals("The selected Appointment time is unavailable", exception.getMessage());
         assertEquals(InvitationStatus.ACTIVE, invitation.getStatus());
         verify(appointmentRepository, never()).saveAndFlush(any(AppointmentEntity.class));
         verify(invitationRepository, never()).flush();
@@ -194,7 +210,7 @@ class AppointmentConfirmationServiceTests {
         when(invitationRepository.findByTokenHashForUpdate(tokenHash))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
+        InvitationUnavailableException unknown = assertThrows(
                 InvitationUnavailableException.class,
                 () -> service.confirm(RAW_TOKEN, IDEMPOTENCY_KEY, STARTS_AT, 60));
 
@@ -203,9 +219,12 @@ class AppointmentConfirmationServiceTests {
         when(invitationRepository.findByTokenHashForUpdate(tokenHash))
                 .thenReturn(Optional.of(revoked));
 
-        assertThrows(
+        InvitationUnavailableException revokedFailure = assertThrows(
                 InvitationUnavailableException.class,
                 () -> service.confirm(RAW_TOKEN, IDEMPOTENCY_KEY, STARTS_AT, 60));
+
+        assertEquals("Invitation is unavailable", unknown.getMessage());
+        assertEquals("Invitation is unavailable", revokedFailure.getMessage());
     }
 
     private void stubNewCommand(InvitationEntity invitation) {
@@ -272,5 +291,18 @@ class AppointmentConfirmationServiceTests {
                 new SQLException("calendar overlap"),
                 "ex_calendar_reservation_staff_time");
         return new DataIntegrityViolationException("calendar overlap", hibernateViolation);
+    }
+
+    private IdentitySecurityProperties securityProperties() {
+        RateLimit defaultLimit = new RateLimit(10, Duration.ofMinutes(5));
+        return new IdentitySecurityProperties(
+                Duration.ofHours(24),
+                Duration.ofHours(8),
+                defaultLimit,
+                defaultLimit,
+                defaultLimit,
+                new RateLimit(30, Duration.ofMinutes(5)),
+                new RateLimit(120, Duration.ofMinutes(1)),
+                new RateLimit(10, Duration.ofMinutes(1)));
     }
 }

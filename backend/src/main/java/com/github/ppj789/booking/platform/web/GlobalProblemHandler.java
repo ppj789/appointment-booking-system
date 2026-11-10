@@ -26,7 +26,6 @@ import com.github.ppj789.booking.invitation.exception.InvitationNotFoundExceptio
 import com.github.ppj789.booking.invitation.exception.InvitationNotRevocableException;
 import com.github.ppj789.booking.invitation.exception.InvitationUnavailableException;
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -38,17 +37,22 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
 @Slf4j
 public class GlobalProblemHandler {
-
-    private static final String PROBLEM_TYPE_PREFIX = "urn:problem:appointment-booking:";
 
     private final Clock clock;
 
@@ -264,18 +268,87 @@ public class GlobalProblemHandler {
     public ResponseEntity<ProblemDetail> dataStoreUnavailable(
             DataAccessException exception,
             HttpServletRequest request) {
-        log.error(
-                "Request failed status={} code={} method={} path={}",
-                HttpStatus.SERVICE_UNAVAILABLE.value(),
+        logTechnicalFailure(
+                HttpStatus.SERVICE_UNAVAILABLE,
                 "SERVICE_UNAVAILABLE",
-                request.getMethod(),
-                request.getRequestURI(),
+                request,
                 exception);
         return problem(
                 HttpStatus.SERVICE_UNAVAILABLE,
                 "Service is temporarily unavailable",
                 "Try the request again later.",
                 "SERVICE_UNAVAILABLE",
+                request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ProblemDetail> malformedRequest(HttpServletRequest request) {
+        return response(
+                HttpStatus.BAD_REQUEST,
+                "Request content is malformed",
+                "Provide a valid JSON request body.",
+                "MALFORMED_REQUEST",
+                request);
+    }
+
+    @ExceptionHandler({
+        MissingRequestHeaderException.class,
+        MissingServletRequestParameterException.class,
+        MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<ProblemDetail> invalidRequest(HttpServletRequest request) {
+        return response(
+                HttpStatus.BAD_REQUEST,
+                "Request is invalid",
+                "Provide the required headers, parameters, and identifier formats.",
+                "INVALID_REQUEST",
+                request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ProblemDetail> resourceNotFound(HttpServletRequest request) {
+        return response(
+                HttpStatus.NOT_FOUND,
+                "Resource not found",
+                "The requested resource is unavailable.",
+                "RESOURCE_NOT_FOUND",
+                request);
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> methodNotAllowed(HttpServletRequest request) {
+        return response(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Method not allowed",
+                "The requested method is not supported for this resource.",
+                "METHOD_NOT_ALLOWED",
+                request);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ProblemDetail> mediaTypeNotSupported(HttpServletRequest request) {
+        return response(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+                "Media type is unsupported",
+                "Use a supported Content-Type for this request.",
+                "UNSUPPORTED_MEDIA_TYPE",
+                request);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ProblemDetail> unexpectedFailure(
+            Exception exception,
+            HttpServletRequest request) {
+        logTechnicalFailure(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+                request,
+                exception);
+        return problem(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Unexpected service failure",
+                "The request could not be completed.",
+                "INTERNAL_SERVER_ERROR",
                 request);
     }
 
@@ -329,12 +402,8 @@ public class GlobalProblemHandler {
             String detail,
             String code,
             HttpServletRequest request) {
-        ProblemDetail problem = ProblemDetail.forStatusAndDetail(status, detail);
-        problem.setTitle(title);
-        problem.setType(URI.create(PROBLEM_TYPE_PREFIX + code.toLowerCase().replace('_', '-')));
-        problem.setInstance(URI.create(request.getRequestURI()));
-        problem.setProperty("code", code);
-        return ResponseEntity.status(status).body(problem);
+        return ResponseEntity.status(status)
+                .body(ApiProblemDetails.create(status, title, detail, code, request));
     }
 
     private void logKnownFailure(
@@ -344,19 +413,39 @@ public class GlobalProblemHandler {
         if (status == HttpStatus.UNAUTHORIZED
                 || status == HttpStatus.FORBIDDEN
                 || status == HttpStatus.TOO_MANY_REQUESTS) {
-            log.warn(
-                    "Request rejected status={} code={} method={} path={}",
-                    status.value(),
-                    code,
-                    request.getMethod(),
-                    request.getRequestURI());
+            log.atWarn()
+                    .addKeyValue("event", "http.request.rejected")
+                    .addKeyValue("outcome", "rejected")
+                    .addKeyValue("status", status.value())
+                    .addKeyValue("errorCode", code)
+                    .addKeyValue("method", request.getMethod())
+                    .addKeyValue("path", request.getRequestURI())
+                    .log("Request rejected");
             return;
         }
-        log.info(
-                "Request rejected status={} code={} method={} path={}",
-                status.value(),
-                code,
-                request.getMethod(),
-                request.getRequestURI());
+        log.atInfo()
+                .addKeyValue("event", "http.request.rejected")
+                .addKeyValue("outcome", "rejected")
+                .addKeyValue("status", status.value())
+                .addKeyValue("errorCode", code)
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
+                .log("Request rejected");
+    }
+
+    private void logTechnicalFailure(
+            HttpStatus status,
+            String code,
+            HttpServletRequest request,
+            Exception exception) {
+        log.atError()
+                .setCause(exception)
+                .addKeyValue("event", "http.request.failed")
+                .addKeyValue("outcome", "failed")
+                .addKeyValue("status", status.value())
+                .addKeyValue("errorCode", code)
+                .addKeyValue("method", request.getMethod())
+                .addKeyValue("path", request.getRequestURI())
+                .log("Request failed");
     }
 }

@@ -100,6 +100,7 @@ class CredentialSetupIssuerTests {
                 defaultLimit,
                 new RateLimit(20, Duration.ofMinutes(5)),
                 new RateLimit(30, Duration.ofMinutes(5)),
-                new RateLimit(120, Duration.ofMinutes(1)));
+                new RateLimit(120, Duration.ofMinutes(1)),
+                new RateLimit(10, Duration.ofMinutes(1)));
     }
 }
