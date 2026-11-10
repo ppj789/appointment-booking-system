@@ -45,7 +45,7 @@ public class StaffInvitationController {
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .body(invitations.stream()
-                        .map(InvitationSummaryResponse::from)
+                        .map(InvitationSummaryResponse::new)
                         .toList());
     }
 

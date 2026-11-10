@@ -18,8 +18,8 @@ public record InvitationSummaryResponse(
         Instant consumedAt,
         Instant revokedAt) {
 
-    static InvitationSummaryResponse from(InvitationSummary invitation) {
-        return new InvitationSummaryResponse(
+    InvitationSummaryResponse(InvitationSummary invitation) {
+        this(
                 invitation.id(),
                 invitation.status(),
                 invitation.title(),
