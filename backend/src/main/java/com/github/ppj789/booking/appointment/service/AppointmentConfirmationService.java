@@ -9,6 +9,8 @@ import com.github.ppj789.booking.branch.persistence.BranchEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationEntity;
 import com.github.ppj789.booking.calendar.persistence.CalendarReservationRepository;
 import com.github.ppj789.booking.identity.security.SecretHasher;
+import com.github.ppj789.booking.identity.security.FixedWindowRateLimiter;
+import com.github.ppj789.booking.identity.config.IdentitySecurityProperties;
 import com.github.ppj789.booking.invitation.exception.InvitationUnavailableException;
 import com.github.ppj789.booking.invitation.persistence.InvitationEntity;
 import com.github.ppj789.booking.invitation.persistence.InvitationRepository;
@@ -37,6 +39,8 @@ public class AppointmentConfirmationService {
     private final InvitationRepository invitationRepository;
     private final AppointmentReferenceIssuer referenceIssuer;
     private final SecretHasher secretHasher;
+    private final FixedWindowRateLimiter rateLimiter;
+    private final IdentitySecurityProperties securityProperties;
     private final Clock clock;
 
     @Transactional
@@ -45,6 +49,10 @@ public class AppointmentConfirmationService {
             UUID idempotencyKey,
             Instant startsAt,
             int durationMinutes) {
+        rateLimiter.requirePermit(
+                "guest-confirmation",
+                rateLimitKey(rawToken),
+                securityProperties.guestConfirmationRateLimit());
         String tokenHash = hashToken(rawToken);
         Optional<AppointmentEntity> existing =
                 appointmentRepository.findByIdempotencyKey(idempotencyKey);
@@ -121,6 +129,12 @@ public class AppointmentConfirmationService {
             throw new InvitationUnavailableException();
         }
         return secretHasher.sha256(rawToken);
+    }
+
+    private String rateLimitKey(String rawToken) {
+        return rawToken == null || rawToken.isBlank() || rawToken.length() > MAXIMUM_TOKEN_LENGTH
+                ? "invalid"
+                : rawToken;
     }
 
     private String requestFingerprint(

@@ -1,6 +1,7 @@
 package com.github.ppj789.booking.invitation.persistence;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 public interface InvitationRepository extends JpaRepository<InvitationEntity, UUID> {
 
     boolean existsByStaffUserIdAndStatus(UUID staffId, InvitationStatus status);
+
+    List<InvitationEntity> findAllByStaffUserIdOrderByUpdatedAtDesc(UUID staffId);
 
     @EntityGraph(attributePaths = {"branch", "staffUser"})
     Optional<InvitationEntity> findByTokenHashAndStatus(

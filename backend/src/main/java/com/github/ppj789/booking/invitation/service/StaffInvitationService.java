@@ -17,6 +17,7 @@ import com.github.ppj789.booking.invitation.persistence.InvitationStatus;
 import com.github.ppj789.booking.invitation.service.InvitationInputPolicy.InvitationDetails;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -31,6 +32,15 @@ public class StaffInvitationService {
     private final UserAccountRepository userAccountRepository;
     private final InvitationTokenIssuer tokenIssuer;
     private final Clock clock;
+
+    @Transactional(readOnly = true)
+    public List<InvitationSummary> list(AuthenticatedAccountPrincipal actor) {
+        requireActiveStaff(actor);
+        loadActiveStaff(actor);
+        return invitationRepository.findAllByStaffUserIdOrderByUpdatedAtDesc(actor.accountId()).stream()
+                .map(InvitationSummary::from)
+                .toList();
+    }
 
     @Transactional
     public InvitationDraft create(
@@ -166,6 +176,37 @@ public class StaffInvitationService {
                     invitation.getDefaultDurationMinutes(),
                     invitation.getCreatedAt(),
                     invitation.getUpdatedAt());
+        }
+    }
+
+    public record InvitationSummary(
+            UUID id,
+            InvitationStatus status,
+            String title,
+            String description,
+            String guestDisplayName,
+            String guestEmail,
+            short defaultDurationMinutes,
+            Instant createdAt,
+            Instant updatedAt,
+            Instant activatedAt,
+            Instant consumedAt,
+            Instant revokedAt) {
+
+        private static InvitationSummary from(InvitationEntity invitation) {
+            return new InvitationSummary(
+                    invitation.getId(),
+                    invitation.getStatus(),
+                    invitation.getTitle(),
+                    invitation.getDescription(),
+                    invitation.getGuestName(),
+                    invitation.getGuestEmail(),
+                    invitation.getDefaultDurationMinutes(),
+                    invitation.getCreatedAt(),
+                    invitation.getUpdatedAt(),
+                    invitation.getActivatedAt(),
+                    invitation.getConsumedAt(),
+                    invitation.getRevokedAt());
         }
     }
 

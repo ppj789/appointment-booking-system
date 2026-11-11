@@ -26,34 +26,47 @@ class AppointmentBookingPolicyTests {
 
     @Test
     void rejectsUnsupportedDurations() {
-        assertThrows(
+        UnsupportedAppointmentDurationException exception = assertThrows(
                 UnsupportedAppointmentDurationException.class,
                 () -> AppointmentBookingPolicy.validate(
                         NOW,
                         Instant.parse("2026-11-10T10:15:00Z"),
                         90));
+
+        assertEquals("The selected Appointment duration is unsupported", exception.getMessage());
     }
 
     @Test
     void rejectsPastStartsAndIntervalsThatDoNotFitInsideTheHorizon() {
-        assertThrows(
+        AppointmentSlotOutsideHorizonException nonFuture = assertThrows(
                 AppointmentSlotOutsideHorizonException.class,
                 () -> AppointmentBookingPolicy.validate(NOW, NOW, 15));
-        assertThrows(
+        AppointmentSlotOutsideHorizonException horizonOverflow = assertThrows(
                 AppointmentSlotOutsideHorizonException.class,
                 () -> AppointmentBookingPolicy.validate(
                         NOW,
                         Instant.parse("2026-11-24T09:45:00Z"),
                         30));
+
+        assertEquals(
+                "The selected Appointment time is outside the booking horizon",
+                nonFuture.getMessage());
+        assertEquals(
+                "The selected Appointment time is outside the booking horizon",
+                horizonOverflow.getMessage());
     }
 
     @Test
     void rejectsStartsOutsideTheFifteenMinuteUtcGrid() {
-        assertThrows(
+        InvalidAppointmentSlotException exception = assertThrows(
                 InvalidAppointmentSlotException.class,
                 () -> AppointmentBookingPolicy.validate(
                         NOW,
                         Instant.parse("2026-11-10T10:16:00Z"),
                         15));
+
+        assertEquals(
+                "The selected Appointment time must use the 15-minute UTC grid",
+                exception.getMessage());
     }
 }

@@ -4,6 +4,12 @@ server:
       cookie:
         secure: false
 
+spring:
+  datasource:
+    url: ${BOOKING_DB_URL:jdbc:postgresql://localhost:5432/appointment_booking}
+    username: ${BOOKING_DB_USERNAME:booking_app}
+    password: ${BOOKING_DB_PASSWORD:local_booking_password}
+
 springdoc:
   pre-loading-enabled: true
   api-docs:

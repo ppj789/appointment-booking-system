@@ -25,7 +25,7 @@ class GlobalProblemHandlerTests {
 
     @Test
     void returnsStableRfc9457AuthenticationProblemWithoutSensitiveDetails() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/sessions");
+        MockHttpServletRequest request = request("POST", "/api/v1/sessions");
 
         ResponseEntity<ProblemDetail> response = handler.invalidCredentials(request);
         ProblemDetail problem = response.getBody();
@@ -37,12 +37,15 @@ class GlobalProblemHandlerTests {
         assertEquals("The email or password is incorrect.", problem.getDetail());
         assertEquals(URI.create("/api/v1/sessions"), problem.getInstance());
         assertEquals("INVALID_CREDENTIALS", problem.getProperties().get("code"));
+        assertEquals(
+                "7c1ad3d0-b0b3-42ed-903b-e131bc8cb6b1",
+                problem.getProperties().get("correlationId"));
         assertFalse(problem.getDetail().contains("admin@example.test"));
     }
 
     @Test
     void returnsRetryAfterWithRateLimitProblem() {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v1/sessions");
+        MockHttpServletRequest request = request("POST", "/api/v1/sessions");
 
         ResponseEntity<ProblemDetail> response = handler.rateLimited(
                 new RateLimitExceededException(NOW.plusSeconds(30)),
@@ -55,7 +58,7 @@ class GlobalProblemHandlerTests {
 
     @Test
     void returnsStableAdministrationProblemsWithoutGuestDetails() {
-        MockHttpServletRequest request = new MockHttpServletRequest(
+        MockHttpServletRequest request = request(
                 "POST",
                 "/api/v1/admin/staff/example/deactivate");
 
@@ -82,7 +85,7 @@ class GlobalProblemHandlerTests {
 
     @Test
     void returnsStableCalendarProblemsWithoutOccupancyDetails() {
-        MockHttpServletRequest request = new MockHttpServletRequest(
+        MockHttpServletRequest request = request(
                 "POST",
                 "/api/v1/me/availability-blocks");
 
@@ -104,7 +107,7 @@ class GlobalProblemHandlerTests {
 
     @Test
     void returnsStableAppointmentProblemsWithoutBookingDetails() {
-        MockHttpServletRequest request = new MockHttpServletRequest(
+        MockHttpServletRequest request = request(
                 "POST",
                 "/api/v1/guest/appointments");
 
@@ -125,6 +128,36 @@ class GlobalProblemHandlerTests {
         assertEquals(HttpStatus.UNPROCESSABLE_CONTENT, invalidSlot.getStatusCode());
         assertEquals("INVALID_SLOT", invalidSlot.getBody().getProperties().get("code"));
         assertFalse(unavailable.getBody().getDetail().contains("Alex Guest"));
+    }
+
+    @Test
+    void mapsFrameworkRequestFailuresToStableProblemCodes() {
+        MockHttpServletRequest request = request("POST", "/api/v1/guest/appointments");
+
+        ResponseEntity<ProblemDetail> malformed = handler.malformedRequest(request);
+        ResponseEntity<ProblemDetail> invalid = handler.invalidRequest(request);
+        ResponseEntity<ProblemDetail> missing = handler.resourceNotFound(request);
+        ResponseEntity<ProblemDetail> method = handler.methodNotAllowed(request);
+        ResponseEntity<ProblemDetail> media = handler.mediaTypeNotSupported(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, malformed.getStatusCode());
+        assertEquals("MALFORMED_REQUEST", malformed.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.BAD_REQUEST, invalid.getStatusCode());
+        assertEquals("INVALID_REQUEST", invalid.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.NOT_FOUND, missing.getStatusCode());
+        assertEquals("RESOURCE_NOT_FOUND", missing.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.METHOD_NOT_ALLOWED, method.getStatusCode());
+        assertEquals("METHOD_NOT_ALLOWED", method.getBody().getProperties().get("code"));
+        assertEquals(HttpStatus.UNSUPPORTED_MEDIA_TYPE, media.getStatusCode());
+        assertEquals("UNSUPPORTED_MEDIA_TYPE", media.getBody().getProperties().get("code"));
+    }
+
+    private MockHttpServletRequest request(String method, String path) {
+        MockHttpServletRequest request = new MockHttpServletRequest(method, path);
+        request.setAttribute(
+                RequestObservabilityFilter.CORRELATION_ATTRIBUTE,
+                "7c1ad3d0-b0b3-42ed-903b-e131bc8cb6b1");
+        return request;
     }
 
 }

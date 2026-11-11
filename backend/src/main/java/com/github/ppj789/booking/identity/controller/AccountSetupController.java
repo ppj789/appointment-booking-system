@@ -1,6 +1,5 @@
 package com.github.ppj789.booking.identity.controller;
 
-import com.github.ppj789.booking.identity.security.AuthenticatedAccountPrincipal;
 import com.github.ppj789.booking.identity.service.AccountSetupService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,18 +29,17 @@ public class AccountSetupController {
             summary = "Complete Staff account setup",
             description = "Sets the first password, consumes the setup capability, and activates the Staff account.")
     @SecurityRequirement(name = "setupToken")
-    @ApiResponse(responseCode = "200", description = "Staff account activated")
+    @ApiResponse(responseCode = "204", description = "Staff account activated; sign-in is still required")
     @ApiResponse(responseCode = "404", description = "Setup link is invalid, expired, consumed, or revoked")
     @ApiResponse(responseCode = "422", description = "Password does not meet the policy")
     @ApiResponse(responseCode = "429", description = "Too many attempts")
-    public ResponseEntity<AccountContextResponse> complete(
+    public ResponseEntity<Void> complete(
             @Parameter(description = "Raw capability read from the frontend URL fragment")
             @RequestHeader(name = "X-Setup-Token", required = false) String setupToken,
             @Valid @RequestBody CompleteAccountSetupRequest setupRequest) {
-        AuthenticatedAccountPrincipal principal =
-                accountSetupService.complete(setupToken, setupRequest.password());
-        return ResponseEntity.ok()
+        accountSetupService.complete(setupToken, setupRequest.password());
+        return ResponseEntity.noContent()
                 .cacheControl(CacheControl.noStore())
-                .body(AccountContextResponse.from(principal));
+                .build();
     }
 }

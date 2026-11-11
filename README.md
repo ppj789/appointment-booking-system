@@ -71,6 +71,8 @@ When the services are healthy:
 - Generated OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 - Generated OpenAPI YAML: <http://localhost:8080/v3/api-docs.yaml>
 - Health: <http://localhost:8080/actuator/health>
+- Liveness: <http://localhost:8080/actuator/health/liveness>
+- Readiness: <http://localhost:8080/actuator/health/readiness>
 
 The local profile generates the OpenAPI description from implemented Spring controllers, DTOs, validation rules, and focused Swagger annotations. API documentation is disabled by default outside the local profile.
 
@@ -98,8 +100,9 @@ Swagger UI can demonstrate the implemented Admin and Staff setup flow:
    ```
 
 4. Copy the value after `#token=` from the one-time `setupUrl` response.
-5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters.
+5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters. A successful `204 No Content` activates the account but does not create a session.
 6. Log out the Admin, then sign in with the new Staff email and password.
+7. Call `GET /api/v1/sessions/current` to read the safe account, workflow type, and Branch context used to bootstrap the frontend session state.
 
 The setup URL is returned once with `Cache-Control: no-store`; only its SHA-256 hash is persisted. Reusing a consumed token returns the same generic unavailable response as an invalid, expired, or revoked token.
 
@@ -127,7 +130,8 @@ The account ID and Branch scope come from the authenticated session; they are ne
 
 After signing in as active Staff, Swagger UI can demonstrate the private Invitation lifecycle:
 
-1. Call `POST /api/v1/me/invitations` to create a draft:
+1. Call `GET /api/v1/me/invitations` to read the Staff-owned Invitation lifecycle state. Capability values and previously returned share links are never included.
+2. Call `POST /api/v1/me/invitations` to create a draft:
 
    ```json
    {
@@ -141,10 +145,10 @@ After signing in as active Staff, Swagger UI can demonstrate the private Invitat
    }
    ```
 
-2. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
-3. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
-4. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
-5. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
+3. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
+4. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
+5. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
+6. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
 
 The backend derives immutable Staff and Branch ownership from the authenticated session. Activation uses a locked state transition, stores only a SHA-256 token hash, and returns the high-entropy capability in the URL fragment with `Cache-Control: no-store`. Drafts alone are editable, and only unused active Invitations are revocable.
 
@@ -175,6 +179,8 @@ To commit one of the returned slots:
 Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen will later render missing intervals as unavailable in the Branch timezone.
 
 Confirmation revalidates the capability, complete duration, 15-minute grid, and rolling horizon. PostgreSQL's shared exclusion constraint remains authoritative if another request occupies the slot concurrently. A successful transaction inserts the Reservation and immutable Appointment, consumes the Invitation, and only then returns the simulated confirmation. Conflicts create no partial booking and leave the Invitation usable.
+
+Confirmation attempts are limited to 10 per Invitation capability per minute by default. This protects the public command without storing or logging the raw capability. Exceeding the limit returns `429 Too Many Requests` with a stable Problem Details code.
 
 Stop the stack while preserving the database volume:
 
@@ -233,6 +239,18 @@ docker compose up postgres
 
 The default local credentials are intentionally fake and may be overridden through a private `.env` copied from `.env.example`.
 
+The `local` Spring profile provides disposable PostgreSQL defaults for developer use. Outside that profile, startup requires `BOOKING_DB_URL`, `BOOKING_DB_USERNAME`, and `BOOKING_DB_PASSWORD`; missing values fail startup rather than silently selecting local credentials.
+
+## Operability
+
+- Every backend request returns an `X-Correlation-ID`. A client-supplied canonical UUID is preserved; malformed or unsafe values are replaced with a server-generated UUID.
+- API failures use RFC 9457 `application/problem+json` responses with a stable `code` and the same `correlationId` returned in the header. Internal exception details are not exposed.
+- Backend stdout uses structured JSON. Request completion and handled-failure records contain operational metadata such as correlation ID, method, safe path, status, outcome, duration, and stable error code.
+- Logs exclude request and response bodies, query strings, cookies, credentials, personal details, session identifiers, and raw setup or Invitation capabilities. Unexpected server failures retain a server-side stack trace for diagnosis.
+- Liveness reports only the application lifecycle and does not depend on PostgreSQL. Readiness includes the application readiness state and database connectivity. Health details are never exposed publicly.
+- The backend uses graceful shutdown with a bounded drain period. Docker Compose allows 30 seconds before forcing container termination.
+- Nginx and Spring Security apply restrictive content type, framing, referrer, browser-permission, and Content Security Policy headers. HSTS is intentionally absent from the local HTTP demonstration and belongs at the production TLS boundary.
+
 ## Security posture
 
 - Login and one-time Staff account setup are public capability endpoints; Admin and Staff operations require a server-managed authenticated session and the matching active workflow type.
@@ -243,7 +261,7 @@ The default local credentials are intentionally fake and may be overridden throu
 - Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits, and expose selectable intervals without private occupancy details.
 - Guest confirmation requires a client-generated UUID Idempotency Key. Identical retries replay the original committed result; key reuse with changed input is rejected, and concurrent calendar conflicts cannot consume the Invitation or expose existing booking details.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
-- The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, and path. An outer request filter logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
+- The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, safe path, and correlation ID. An outer request filter records every completion and logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
 
 ## Current limitation
 

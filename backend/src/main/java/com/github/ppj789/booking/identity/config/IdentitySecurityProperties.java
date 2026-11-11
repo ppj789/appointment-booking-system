@@ -11,7 +11,8 @@ public record IdentitySecurityProperties(
         RateLimit setupRateLimit,
         RateLimit provisioningRateLimit,
         RateLimit guestInvitationRateLimit,
-        RateLimit guestAvailabilityRateLimit) {
+        RateLimit guestAvailabilityRateLimit,
+        RateLimit guestConfirmationRateLimit) {
 
     public IdentitySecurityProperties {
         requirePositive(credentialSetupExpiry, "credential setup expiry");
@@ -20,7 +21,8 @@ public record IdentitySecurityProperties(
                 || setupRateLimit == null
                 || provisioningRateLimit == null
                 || guestInvitationRateLimit == null
-                || guestAvailabilityRateLimit == null) {
+                || guestAvailabilityRateLimit == null
+                || guestConfirmationRateLimit == null) {
             throw new IllegalArgumentException("Identity rate limits must be configured");
         }
     }

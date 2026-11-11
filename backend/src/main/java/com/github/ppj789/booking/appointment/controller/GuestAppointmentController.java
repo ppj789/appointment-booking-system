@@ -41,6 +41,8 @@ public class GuestAppointmentController {
     @ApiResponse(responseCode = "404", description = "Invitation is unavailable")
     @ApiResponse(responseCode = "409", description = "Slot or Idempotency Key conflict")
     @ApiResponse(responseCode = "422", description = "Appointment selection is invalid")
+    @ApiResponse(responseCode = "429", description = "Confirmation attempt limit exceeded")
+    @ApiResponse(responseCode = "503", description = "Booking persistence is temporarily unavailable")
     public ResponseEntity<AppointmentConfirmationResponse> confirm(
             @RequestHeader(INVITATION_TOKEN_HEADER) String rawToken,
             @RequestHeader(IDEMPOTENCY_KEY_HEADER)

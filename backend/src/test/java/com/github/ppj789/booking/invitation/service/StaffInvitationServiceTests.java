@@ -25,6 +25,7 @@ import com.github.ppj789.booking.invitation.persistence.InvitationStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,25 @@ class StaffInvitationServiceTests {
             userAccountRepository,
             tokenIssuer,
             Clock.fixed(NOW, ZoneOffset.UTC));
+
+    @Test
+    void listsOnlyInvitationsOwnedByTheActiveStaffAccount() {
+        InvitationEntity invitation = draftInvitation();
+        invitation.activate(TOKEN_HASH, NOW.minusSeconds(60));
+        when(userAccountRepository.findById(STAFF_ID)).thenReturn(Optional.of(activeStaff()));
+        when(invitationRepository.findAllByStaffUserIdOrderByUpdatedAtDesc(STAFF_ID))
+                .thenReturn(List.of(invitation));
+
+        List<StaffInvitationService.InvitationSummary> result = service.list(staffPrincipal());
+
+        assertEquals(1, result.size());
+        StaffInvitationService.InvitationSummary summary = result.getFirst();
+        assertEquals(INVITATION_ID, summary.id());
+        assertEquals(InvitationStatus.ACTIVE, summary.status());
+        assertEquals("alex@example.test", summary.guestEmail());
+        assertEquals(NOW.minusSeconds(60), summary.activatedAt());
+        verify(invitationRepository).findAllByStaffUserIdOrderByUpdatedAtDesc(STAFF_ID);
+    }
 
     @Test
     void createsABranchBoundDraftWithCanonicalGuestDetails() {
