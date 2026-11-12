@@ -6,14 +6,35 @@
 }
 
 .app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   min-height: 100vh;
   background: var(--app-color-page);
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.75rem 1rem;
+  transform: translateY(-150%);
+  border-radius: 0.5rem;
+  background: var(--app-color-text);
+  color: var(--app-color-surface);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 .topbar {
   position: relative;
   z-index: 2;
-  height: 64px;
+  min-height: 64px;
+  height: auto;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   padding: 0 clamp(1rem, 4vw, 4rem);
   border-bottom: 1px solid var(--app-color-outline);
   background: var(--app-color-surface);
@@ -39,10 +60,48 @@
   border-radius: 0.75rem;
   background: var(--app-color-primary);
   color: var(--app-color-on-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 .topbar-spacer {
   flex: 1;
+}
+
+.primary-navigation {
+  display: flex;
+}
+
+.active-link {
+  background: var(--app-color-primary-container);
+}
+
+.account-summary {
+  display: none;
+  line-height: 1.2;
+}
+
+.account-name,
+.account-context {
+  overflow: hidden;
+  max-width: 12rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.account-context {
+  color: var(--app-color-muted);
+  font-size: 0.75rem;
+}
+
+.shell-alert-region {
+  width: min(var(--app-content-width), calc(100% - 2rem));
+  margin: var(--app-space-md) auto 0;
 }
 
 main {
@@ -63,7 +122,13 @@ footer {
 
 @include breakpoints.medium-up {
   .topbar {
-    height: 72px;
+    min-height: 72px;
+    gap: 1rem;
+  }
+
+  .account-summary {
+    display: flex;
+    flex-direction: column;
   }
 
   footer {

@@ -1,0 +1,35 @@
+.login-page {
+  display: grid;
+  min-height: 100vh;
+  padding: 1rem;
+  place-items: center;
+  background: var(--app-color-page);
+}
+
+.login-card {
+  width: min(100%, 28rem);
+  padding: clamp(0.5rem, 3vw, 1.5rem);
+  border: 1px solid var(--app-color-outline);
+  box-shadow: 0 1rem 3rem rgb(16 35 63 / 8%);
+}
+
+.login-card mat-card-title {
+  color: var(--app-color-text);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.login-form {
+  display: grid;
+  gap: var(--app-space-md);
+  padding-top: var(--app-space-lg);
+}
+
+.sign-in-button {
+  width: 100%;
+  min-height: 3rem;
+}
+
+button mat-spinner {
+  display: inline-block;
+}
