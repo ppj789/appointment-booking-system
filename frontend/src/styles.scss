@@ -52,6 +52,11 @@ a {
   gap: var(--app-space-sm);
 }
 
+.page-header > div {
+  display: grid;
+  gap: var(--app-space-sm);
+}
+
 .page-header h1,
 .page-header p {
   margin: 0;
@@ -67,6 +72,27 @@ a {
   border: 1px solid var(--app-color-outline);
   border-radius: var(--app-radius-card);
   background: var(--app-color-surface);
+}
+
+.app-data-table {
+  width: 100%;
+  background: transparent;
+}
+
+.app-data-table th {
+  color: var(--app-color-muted);
+  font-weight: 600;
+}
+
+.app-data-table td {
+  vertical-align: middle;
+}
+
+.app-secondary-value {
+  display: block;
+  padding-top: 0.2rem;
+  color: var(--app-color-muted);
+  font-size: 0.8rem;
 }
 
 .visually-hidden {

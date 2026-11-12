@@ -1,0 +1,115 @@
+<main class="setup-page">
+  <mat-card class="setup-card">
+    @if (completed()) {
+      <mat-card-header>
+        <mat-card-title>Account ready</mat-card-title>
+        @if (session.context(); as currentSession) {
+          <mat-card-subtitle>
+            Your password has been set. This browser is still signed in as
+            {{ currentSession.account.displayName }}.
+          </mat-card-subtitle>
+        } @else {
+          <mat-card-subtitle>
+            Your password has been set. Sign in with your Staff email and new password.
+          </mat-card-subtitle>
+        }
+      </mat-card-header>
+      @if (continueError(); as signOutError) {
+        <mat-card-content>
+          <app-error-state
+            title="Could not sign out the current account"
+            [message]="signOutError.message"
+            [correlationId]="signOutError.correlationId"
+          />
+        </mat-card-content>
+      }
+      <mat-card-actions>
+        <button
+          mat-flat-button
+          type="button"
+          [disabled]="session.busy()"
+          (click)="continueToSignIn()"
+        >
+          @if (session.isAuthenticated()) {
+            Sign out and continue to Staff sign-in
+          } @else {
+            Continue to sign in
+          }
+        </button>
+      </mat-card-actions>
+    } @else {
+      <mat-card-header>
+        <mat-card-title>Set up your account</mat-card-title>
+        <mat-card-subtitle>Choose the password you will use to sign in.</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (error(); as setupError) {
+          <app-error-state
+            title="Account setup unavailable"
+            [message]="setupError.message"
+            [correlationId]="setupError.correlationId"
+          />
+        }
+
+        @if (setupToken) {
+          <form id="account-setup-form" [formGroup]="form" (ngSubmit)="submit()">
+            <mat-form-field appearance="outline">
+              <mat-label>Password</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="password"
+                autocomplete="new-password"
+              />
+              <mat-hint>Use between 12 and 128 characters.</mat-hint>
+              @if (form.controls.password.hasError('required')) {
+                <mat-error>Password is required.</mat-error>
+              } @else if (form.controls.password.hasError('minlength')) {
+                <mat-error>Password must contain at least 12 characters.</mat-error>
+              } @else if (form.controls.password.hasError('maxlength')) {
+                <mat-error>Password cannot exceed 128 characters.</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Confirm password</mat-label>
+              <input
+                matInput
+                type="password"
+                formControlName="confirmPassword"
+                autocomplete="new-password"
+              />
+              @if (form.controls.confirmPassword.hasError('required')) {
+                <mat-error>Confirm your password.</mat-error>
+              }
+            </mat-form-field>
+
+            @if (mismatch()) {
+              <p class="mismatch" role="alert">The passwords do not match.</p>
+            }
+          </form>
+        }
+      </mat-card-content>
+
+      @if (setupToken) {
+        <mat-card-actions>
+          <button
+            class="setup-button"
+            mat-flat-button
+            type="submit"
+            form="account-setup-form"
+            [disabled]="form.invalid || submitting()"
+          >
+            @if (submitting()) {
+              <mat-spinner diameter="20" aria-hidden="true" />
+              <span class="visually-hidden">Setting password</span>
+            } @else {
+              Set password
+            }
+          </button>
+        </mat-card-actions>
+      }
+    }
+  </mat-card>
+</main>

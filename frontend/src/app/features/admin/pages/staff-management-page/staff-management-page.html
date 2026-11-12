@@ -1,0 +1,160 @@
+<section class="page">
+  <header class="page-header management-header">
+    <div>
+      <h1>Staff management</h1>
+      <p>Create and manage Staff accounts for the selected Branch.</p>
+    </div>
+    <button mat-flat-button type="button" [disabled]="!store.hasBranches()" (click)="addStaff()">
+      Add Staff
+    </button>
+  </header>
+
+  @if (store.loadError(); as error) {
+    <app-error-state
+      [message]="error.message"
+      [correlationId]="error.correlationId"
+      [retryable]="true"
+      (retry)="store.load()"
+    />
+  } @else {
+    <section class="filters surface-card" aria-label="Staff filters">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Branch</mat-label>
+        <mat-select
+          [value]="store.selectedBranchCode()"
+          [disabled]="store.loading()"
+          (selectionChange)="filterByBranch($event.value)"
+        >
+          @for (branch of store.branches(); track branch.publicCode) {
+            <mat-option [value]="branch.publicCode">{{ branch.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    @if (store.actionError(); as error) {
+      <div class="action-error">
+        <app-error-state
+          title="Staff action could not be completed"
+          [message]="error.message"
+          [correlationId]="error.correlationId"
+        />
+        @if (error.code === 'STAFF_DEACTIVATION_BLOCKED') {
+          <ul>
+            @if (error.activeInvitation) {
+              <li>Revoke the active Invitation first.</li>
+            }
+            @if (error.futureAppointment) {
+              <li>The Staff member has a future Appointment.</li>
+            }
+          </ul>
+        }
+        <button mat-button type="button" (click)="store.clearActionError()">Dismiss</button>
+      </div>
+    }
+
+    @if (store.loading()) {
+      <app-loading-state label="Loading Staff…" />
+    } @else if (store.staff().length === 0) {
+      <app-empty-state
+        title="No Staff found"
+        message="Add a Staff member or choose another Branch."
+      />
+    } @else {
+      <div class="staff-table surface-card">
+        <table mat-table class="app-data-table" [dataSource]="store.staff()">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let staff">{{ staff.displayName }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef>Email</th>
+            <td mat-cell *matCellDef="let staff">{{ staff.email }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let staff">
+              <span class="status" [attr.data-status]="staff.status">
+                {{ statusLabel(staff.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef><span class="visually-hidden">Actions</span></th>
+            <td mat-cell *matCellDef="let staff" class="actions-cell">
+              <div class="row-actions">
+                @if (staff.status === 'PENDING_SETUP') {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="store.actionStaffId() === staff.id"
+                    (click)="replaceSetup(staff)"
+                  >
+                    Replace setup link
+                  </button>
+                }
+                @if (staff.status !== 'DEACTIVATED') {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="store.actionStaffId() === staff.id"
+                    (click)="deactivate(staff)"
+                  >
+                    Deactivate
+                  </button>
+                }
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      </div>
+
+      <div class="staff-cards" aria-label="Staff accounts">
+        @for (staff of store.staff(); track staff.id) {
+          <article class="staff-card surface-card">
+            <div class="staff-identity">
+              <h2>{{ staff.displayName }}</h2>
+              <p>{{ staff.email }}</p>
+            </div>
+            <dl>
+              <div>
+                <dt>Status</dt>
+                <dd>
+                  <span class="status" [attr.data-status]="staff.status">
+                    {{ statusLabel(staff.status) }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+            @if (staff.status === 'PENDING_SETUP') {
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="store.actionStaffId() === staff.id"
+                (click)="replaceSetup(staff)"
+              >
+                Replace setup link
+              </button>
+            }
+            @if (staff.status !== 'DEACTIVATED') {
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="store.actionStaffId() === staff.id"
+                (click)="deactivate(staff)"
+              >
+                Deactivate
+              </button>
+            }
+          </article>
+        }
+      </div>
+    }
+  }
+</section>

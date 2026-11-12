@@ -1,0 +1,125 @@
+@use 'breakpoints';
+
+.management-header {
+  align-items: start;
+}
+
+.management-header button {
+  justify-self: start;
+}
+
+.filters {
+  padding-block: var(--app-space-md);
+}
+
+.filters mat-form-field {
+  width: min(100%, 22rem);
+}
+
+.action-error {
+  display: grid;
+  justify-items: start;
+  gap: var(--app-space-sm);
+}
+
+.action-error ul {
+  margin: 0;
+}
+
+.staff-table {
+  display: none;
+  padding: 0;
+  overflow: hidden;
+}
+
+.actions-cell {
+  text-align: right;
+}
+
+.row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-space-sm);
+}
+
+.status {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status[data-status='ACTIVE'] {
+  background: var(--app-color-success-container);
+  color: var(--app-color-success);
+}
+
+.status[data-status='PENDING_SETUP'] {
+  background: var(--app-color-warning-container);
+  color: var(--app-color-warning);
+}
+
+.status[data-status='DEACTIVATED'] {
+  background: var(--app-color-page);
+  color: var(--app-color-muted);
+}
+
+.staff-cards {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.staff-card {
+  display: grid;
+  justify-items: start;
+  gap: var(--app-space-md);
+}
+
+.staff-identity {
+  display: grid;
+  gap: var(--app-space-sm);
+}
+
+.staff-card h2,
+.staff-card p,
+.staff-card dl,
+.staff-card dd {
+  margin: 0;
+}
+
+.staff-card p,
+.staff-card dt {
+  color: var(--app-color-muted);
+}
+
+.staff-card p {
+  overflow-wrap: anywhere;
+}
+
+.staff-card dl {
+  display: grid;
+  width: 100%;
+  gap: var(--app-space-md);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.staff-card dt {
+  padding-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@include breakpoints.expanded-up {
+  .management-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .staff-table {
+    display: block;
+  }
+
+  .staff-cards {
+    display: none;
+  }
+}

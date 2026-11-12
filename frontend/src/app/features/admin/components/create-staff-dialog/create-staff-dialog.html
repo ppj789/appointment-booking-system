@@ -1,0 +1,39 @@
+<h2 mat-dialog-title>Add Staff</h2>
+
+<mat-dialog-content>
+  <p>
+    Add Staff to <strong>{{ branch.name }}</strong
+    >. The Staff member will use a one-time link to set a password.
+  </p>
+
+  <form id="create-staff-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Display name</mat-label>
+      <input matInput formControlName="displayName" autocomplete="name" />
+      @if (form.controls.displayName.hasError('required')) {
+        <mat-error>Display name is required.</mat-error>
+      } @else if (form.controls.displayName.hasError('maxlength')) {
+        <mat-error>Display name cannot exceed 100 characters.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Email</mat-label>
+      <input matInput type="email" formControlName="email" autocomplete="off" />
+      @if (form.controls.email.hasError('required')) {
+        <mat-error>Email is required.</mat-error>
+      } @else if (form.controls.email.hasError('email')) {
+        <mat-error>Enter a valid email address.</mat-error>
+      } @else if (form.controls.email.hasError('maxlength')) {
+        <mat-error>Email cannot exceed 254 characters.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Cancel</button>
+  <button mat-flat-button type="submit" form="create-staff-form" [disabled]="form.invalid">
+    Add Staff
+  </button>
+</mat-dialog-actions>

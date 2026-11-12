@@ -1,0 +1,12 @@
+mat-dialog-content p {
+  max-width: 32rem;
+  margin-top: 0;
+  color: var(--app-color-muted);
+}
+
+form {
+  display: grid;
+  gap: var(--app-space-sm);
+  min-width: min(28rem, 70vw);
+  padding-top: var(--app-space-sm);
+}

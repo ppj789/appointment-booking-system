@@ -9,6 +9,14 @@ import {
 
 export const routes: Routes = [
   {
+    path: 'account-setup',
+    title: 'Set up account | Appointment Booking',
+    loadComponent: () =>
+      import('./features/auth/pages/account-setup-page/account-setup-page').then(
+        ({ AccountSetupPage }) => AccountSetupPage,
+      ),
+  },
+  {
     path: 'login',
     title: 'Sign in | Appointment Booking',
     canActivate: [loginGuard],
@@ -31,11 +39,11 @@ export const routes: Routes = [
       },
       {
         path: 'admin',
-        title: 'Admin workspace | Appointment Booking',
+        title: 'Staff management | Appointment Booking',
         canActivate: [adminGuard],
         loadComponent: () =>
-          import('./features/admin/pages/admin-home-page/admin-home-page').then(
-            ({ AdminHomePage }) => AdminHomePage,
+          import('./features/admin/pages/staff-management-page/staff-management-page').then(
+            ({ StaffManagementPage }) => StaffManagementPage,
           ),
       },
       {

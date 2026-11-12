@@ -4,12 +4,16 @@ export interface AppError {
   message: string;
   code?: string;
   correlationId?: string;
+  activeInvitation?: boolean;
+  futureAppointment?: boolean;
 }
 
 interface ProblemDetails {
   detail?: unknown;
   code?: unknown;
   correlationId?: unknown;
+  activeInvitation?: unknown;
+  futureAppointment?: unknown;
 }
 
 const ERROR_MESSAGES: Readonly<Record<string, string>> = {
@@ -39,7 +43,7 @@ export function toAppError(error: unknown): AppError {
   }
 
   const safeDetail = typeof problem?.detail === 'string' ? problem.detail : undefined;
-  return {
+  const appError: AppError = {
     message:
       (code ? ERROR_MESSAGES[code] : undefined) ??
       safeDetail ??
@@ -47,6 +51,13 @@ export function toAppError(error: unknown): AppError {
     code,
     correlationId,
   };
+  if (typeof problem?.activeInvitation === 'boolean') {
+    appError.activeInvitation = problem.activeInvitation;
+  }
+  if (typeof problem?.futureAppointment === 'boolean') {
+    appError.futureAppointment = problem.futureAppointment;
+  }
+  return appError;
 }
 
 function isProblemDetails(value: unknown): value is ProblemDetails {
