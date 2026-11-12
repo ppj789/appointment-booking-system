@@ -2,9 +2,13 @@
 
 // Change the platform palette and typography here. Angular Material components
 // and application-specific styles both consume the resulting shared tokens.
-$primary-palette: mat.$azure-palette;
+$primary-palette: mat.$blue-palette;
 $tertiary-palette: mat.$blue-palette;
-$typography: Roboto;
+$font-family: ('Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif);
+$typography: (
+  plain-family: $font-family,
+  brand-family: $font-family,
+);
 $density: 0;
 
 @mixin apply-platform-theme() {
@@ -29,12 +33,15 @@ $density: 0;
   --app-color-on-tertiary: var(--mat-sys-on-tertiary);
 
   // Surface and content roles
-  --app-color-page: #f7f9fc;
-  --app-color-surface: var(--mat-sys-surface-container-lowest);
-  --app-color-text: var(--mat-sys-on-surface);
-  --app-color-muted: var(--mat-sys-on-surface-variant);
-  --app-color-outline: var(--mat-sys-outline-variant);
-  --app-color-focus: #ffb000;
+  --app-color-page: #edf4ff;
+  --app-color-surface: #ffffff;
+  --app-color-text: #10233f;
+  --app-color-muted: #53657d;
+  --app-color-outline: #c8d5e8;
+  --app-color-focus: #075ad7;
+  --app-color-error: var(--mat-sys-error);
+  --app-color-error-container: var(--mat-sys-error-container);
+  --app-color-on-error-container: var(--mat-sys-on-error-container);
 
   // Typography and shape
   --app-font-family: var(--mat-sys-body-medium-font);

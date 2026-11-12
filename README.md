@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus an authenticated Angular application shell, secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
 
 ## Technology baseline
 
@@ -265,4 +265,4 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular Staff and Guest experiences are not implemented yet, so the complete booking journey currently uses the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
+Public registration is intentionally unavailable. The Angular application now provides login, session restoration, logout, and protected Admin/Staff route shells; the Staff management, calendar, Invitation, and Guest booking screens are not implemented yet, so those product operations still use the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.

@@ -1,26 +1,72 @@
 <div class="app-shell">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
   <mat-toolbar class="topbar">
     <a class="brand" routerLink="/" aria-label="Appointment Booking home">
-      <span class="brand-mark" aria-hidden="true">
-        <mat-icon>event_available</mat-icon>
-      </span>
+      <span class="brand-mark" aria-hidden="true">AB</span>
       <span>Appointment Booking</span>
     </a>
 
     <span class="topbar-spacer"></span>
 
-    <a mat-button [href]="links.apiDocs">
-      <mat-icon>description</mat-icon>
-      API
-    </a>
+    @if (session.context(); as context) {
+      <nav class="primary-navigation" aria-label="Primary navigation">
+        @if (context.account.accountType === 'ADMIN') {
+          <a
+            mat-button
+            routerLink="/admin"
+            routerLinkActive="active-link"
+            ariaCurrentWhenActive="page"
+          >
+            Admin
+          </a>
+        } @else {
+          <a
+            mat-button
+            routerLink="/staff"
+            routerLinkActive="active-link"
+            ariaCurrentWhenActive="page"
+          >
+            Calendar
+          </a>
+        }
+      </nav>
+
+      <div class="account-summary">
+        <span class="account-name">{{ context.account.displayName }}</span>
+        @if (context.branch; as branch) {
+          <span class="account-context">{{ branch.name }}</span>
+        } @else {
+          <span class="account-context">Platform Admin</span>
+        }
+      </div>
+
+      <button mat-stroked-button type="button" [disabled]="session.busy()" (click)="logout()">
+        Sign out
+      </button>
+    }
   </mat-toolbar>
 
-  <main>
+  @if (logoutError(); as error) {
+    <div class="shell-alert-region">
+      <app-error-state
+        title="Sign out failed"
+        [message]="error.message"
+        [correlationId]="error.correlationId"
+      />
+    </div>
+  }
+
+  <main id="main-content" tabindex="-1">
     <router-outlet />
   </main>
 
   <footer>
     <span>Appointment Booking System</span>
-    <span>Foundation only · No customer data</span>
+    @if (session.context()?.branch; as branch) {
+      <span>Times shown in {{ branch.timezone }}</span>
+    } @else {
+      <span>Secure Admin workspace</span>
+    }
   </footer>
 </div>
