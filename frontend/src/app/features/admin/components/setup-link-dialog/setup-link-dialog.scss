@@ -1,0 +1,22 @@
+mat-dialog-content {
+  display: grid;
+  min-width: min(32rem, 72vw);
+}
+
+.warning {
+  padding: var(--app-space-md);
+  border-left: 4px solid var(--app-color-warning);
+  background: var(--app-color-warning-container);
+}
+
+.expiry {
+  margin-top: 0;
+  color: var(--app-color-muted);
+  font-size: 0.85rem;
+}
+
+.copy-status {
+  margin-bottom: 0;
+  color: var(--app-color-success);
+  font-weight: 600;
+}

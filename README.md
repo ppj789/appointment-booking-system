@@ -2,7 +2,7 @@
 
 A production-minded full-stack Appointment Booking System assessment.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus an authenticated Angular application shell, secure local Admin authentication, Branch-bound Staff administration, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
+The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus an authenticated Angular application shell, an Admin Staff-management experience, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
 
 ## Technology baseline
 
@@ -85,7 +85,15 @@ The Admin can manage Staff across all configured Branches; Staff accounts remain
 
 ### Exercise Staff account setup locally
 
-Swagger UI can demonstrate the implemented Admin and Staff setup flow:
+The Angular application provides the primary Admin and Staff setup flow:
+
+1. Open <http://localhost:8080> and sign in with the local Admin credentials above.
+2. Filter Staff by Branch or select **Add Staff**.
+3. Choose a configured Branch, enter a synthetic display name and `.test` email, then create the Staff account.
+4. Copy the one-time setup link before closing the result. Open it in a separate private browser session, set a 12–128 character password, then sign in as the new Staff member.
+5. Pending Staff can receive a confirmed replacement setup link. Active Staff can be deactivated only when no active Invitation or future Appointment blocks the operation.
+
+Swagger UI remains available for direct API inspection:
 
 1. Call `POST /api/v1/sessions` with the local Admin credentials above.
 2. Call `GET /api/v1/admin/branches` and select a Branch public code.
@@ -265,4 +273,4 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular application now provides login, session restoration, logout, and protected Admin/Staff route shells; the Staff management, calendar, Invitation, and Guest booking screens are not implemented yet, so those product operations still use the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
+Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, and protected workflow routes. Staff calendar, Invitation, and Guest booking screens are not implemented yet, so those product operations still use the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
