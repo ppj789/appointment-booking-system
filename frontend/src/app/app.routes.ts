@@ -9,6 +9,14 @@ import {
 
 export const routes: Routes = [
   {
+    path: 'book',
+    title: 'Book appointment | Appointment Booking',
+    loadComponent: () =>
+      import('./features/guest/pages/guest-booking-page/guest-booking-page').then(
+        ({ GuestBookingPage }) => GuestBookingPage,
+      ),
+  },
+  {
     path: 'account-setup',
     title: 'Set up account | Appointment Booking',
     loadComponent: () =>

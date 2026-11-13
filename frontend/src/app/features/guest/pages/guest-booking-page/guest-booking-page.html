@@ -1,0 +1,182 @@
+<main class="guest-page">
+  @if (store.loading()) {
+    <app-loading-state label="Opening booking invitation…" />
+  } @else if (store.confirmation(); as result) {
+    <mat-card class="confirmation-card">
+      <mat-card-header>
+        <span class="success-mark" aria-hidden="true">✓</span>
+        <div>
+          <p class="eyebrow">Simulated confirmation</p>
+          <mat-card-title>Appointment confirmed</mat-card-title>
+          <mat-card-subtitle>{{ result.confirmation.message }}</mat-card-subtitle>
+        </div>
+      </mat-card-header>
+      <mat-card-content>
+        <dl class="confirmation-details">
+          <div>
+            <dt>Reference</dt>
+            <dd>{{ result.confirmation.reference }}</dd>
+          </div>
+          <div>
+            <dt>Appointment</dt>
+            <dd>{{ result.appointment.title }}</dd>
+          </div>
+          <div>
+            <dt>Host</dt>
+            <dd>{{ result.appointment.hostDisplayName }}</dd>
+          </div>
+          <div>
+            <dt>Time</dt>
+            <dd>
+              {{ result.appointment.startAt | branchDateTime: result.appointment.branch.timezone }}
+              to
+              {{ result.appointment.endAt | branchDateTime: result.appointment.branch.timezone }}
+            </dd>
+          </div>
+          <div>
+            <dt>Branch</dt>
+            <dd>
+              {{ result.appointment.branch.name }}<br />
+              {{ result.appointment.branch.displayAddress }}
+            </dd>
+          </div>
+        </dl>
+        <p class="completion-note">
+          This on-screen message is the assessment's simulated confirmation. No email or SMS is
+          sent.
+        </p>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    @if (store.error(); as bookingError) {
+      <app-error-state
+        title="Booking could not be completed"
+        [message]="bookingError.message"
+        [correlationId]="bookingError.correlationId"
+        [retryable]="canRetry(bookingError)"
+        (retry)="store.retry()"
+      />
+    }
+
+    @if (store.invitation(); as invitation) {
+      <header class="guest-header">
+        <p class="eyebrow">Appointment invitation</p>
+        <h1>{{ invitation.title }}</h1>
+        <p>
+          Hi {{ invitation.guestDisplayName }}, choose a time with {{ invitation.hostDisplayName }}.
+        </p>
+      </header>
+
+      <section class="booking-layout" aria-label="Appointment booking">
+        <mat-card class="context-card">
+          <mat-card-header>
+            <mat-card-title>Appointment details</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p>{{ invitation.description }}</p>
+            <dl class="context-details">
+              <div>
+                <dt>Staff member</dt>
+                <dd>{{ invitation.hostDisplayName }}</dd>
+              </div>
+              <div>
+                <dt>Branch</dt>
+                <dd>{{ invitation.branch.name }}</dd>
+              </div>
+              <div>
+                <dt>Address</dt>
+                <dd>{{ invitation.branch.displayAddress }}</dd>
+              </div>
+              <div>
+                <dt>Timezone</dt>
+                <dd>{{ invitation.branch.timezone }}</dd>
+              </div>
+            </dl>
+          </mat-card-content>
+        </mat-card>
+
+        <section class="availability-card surface-card" aria-labelledby="choose-time-title">
+          <div class="availability-heading">
+            <div>
+              <h2 id="choose-time-title">Choose a time</h2>
+              <p>Only available times are shown.</p>
+            </div>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Duration</mat-label>
+              <mat-select
+                [value]="store.durationMinutes()"
+                [disabled]="store.availabilityLoading() || store.confirming()"
+                (valueChange)="changeDuration($event)"
+              >
+                @for (duration of invitation.supportedDurationsMinutes; track duration) {
+                  <mat-option [value]="duration">{{ durationLabel(duration) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          @if (store.availabilityLoading()) {
+            <app-loading-state label="Finding available times…" />
+          } @else if (dateGroups().length === 0) {
+            <app-empty-state
+              title="No times available"
+              message="Try another duration or ask the Staff member for assistance."
+            />
+          } @else {
+            <div class="date-options" aria-label="Available dates">
+              @for (group of dateGroups(); track group.dateKey) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [class.selected]="selectedDate() === group.dateKey"
+                  [attr.aria-pressed]="selectedDate() === group.dateKey"
+                  (click)="selectDate(group.dateKey)"
+                >
+                  {{ group.label }}
+                </button>
+              }
+            </div>
+
+            <div class="time-options" aria-label="Available times">
+              @for (slot of visibleSlots(); track slot.startAt) {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [class.selected]="isSelected(slot)"
+                  [attr.aria-pressed]="isSelected(slot)"
+                  (click)="store.selectSlot(slot)"
+                >
+                  {{ slotTime(slot) }}
+                </button>
+              }
+            </div>
+
+            @if (store.selectedSlot(); as selectedSlot) {
+              <aside class="selection-summary" aria-live="polite">
+                <div>
+                  <strong>Selected appointment</strong>
+                  <span>
+                    {{ selectedSlot.startAt | branchDateTime: invitation.branch.timezone }} ·
+                    {{ durationLabel(store.durationMinutes() ?? 0) }}
+                  </span>
+                </div>
+                <button
+                  mat-flat-button
+                  type="button"
+                  [disabled]="store.confirming()"
+                  (click)="store.confirmSelected()"
+                >
+                  @if (store.confirming()) {
+                    Confirming…
+                  } @else {
+                    Confirm appointment
+                  }
+                </button>
+              </aside>
+            }
+          }
+        </section>
+      </section>
+    }
+  }
+</main>

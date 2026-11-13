@@ -1,0 +1,167 @@
+@use 'breakpoints';
+
+.guest-page {
+  display: grid;
+  width: min(calc(100% - 2rem), var(--app-content-width));
+  min-height: 100vh;
+  margin-inline: auto;
+  padding-block: clamp(1.5rem, 5vw, 4rem);
+  align-content: start;
+  gap: var(--app-space-lg);
+}
+
+.guest-header,
+.booking-layout,
+.context-details,
+.confirmation-details,
+.availability-card {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.guest-header h1,
+.guest-header p,
+.availability-heading h2,
+.availability-heading p,
+.context-card p,
+.completion-note,
+dl,
+dd {
+  margin: 0;
+}
+
+.guest-header > p:last-child,
+.availability-heading p,
+.completion-note {
+  color: var(--app-color-muted);
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--app-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.context-card,
+.confirmation-card {
+  border: 1px solid var(--app-color-outline);
+  box-shadow: 0 1rem 3rem rgb(16 35 63 / 8%);
+}
+
+.context-card mat-card-content,
+.confirmation-card mat-card-content {
+  display: grid;
+  gap: var(--app-space-lg);
+  padding-top: var(--app-space-md);
+}
+
+.context-details > div,
+.confirmation-details > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+dt {
+  color: var(--app-color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.availability-heading {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.availability-heading mat-form-field {
+  width: min(100%, 15rem);
+}
+
+.date-options {
+  display: flex;
+  gap: var(--app-space-sm);
+  padding-block: 0.25rem;
+  overflow-x: auto;
+}
+
+.date-options button {
+  flex: 0 0 auto;
+}
+
+.time-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--app-space-sm);
+}
+
+.date-options button.selected,
+.time-options button.selected {
+  border-color: var(--app-color-primary);
+  background: var(--app-color-primary-container);
+  color: var(--app-color-text);
+}
+
+.selection-summary {
+  display: grid;
+  gap: var(--app-space-md);
+  padding: var(--app-space-md);
+  border: 1px solid var(--app-color-primary);
+  border-radius: var(--app-radius-card);
+  background: var(--app-color-primary-container);
+}
+
+.selection-summary > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.selection-summary span {
+  color: var(--app-color-muted);
+}
+
+.selection-summary button {
+  min-height: 3rem;
+}
+
+.confirmation-card {
+  width: min(100%, 42rem);
+  margin-inline: auto;
+}
+
+.confirmation-card mat-card-header {
+  align-items: center;
+  gap: var(--app-space-md);
+}
+
+.success-mark {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--app-color-success-container);
+  color: var(--app-color-success);
+  font-size: 1.5rem;
+  font-weight: 700;
+  place-items: center;
+}
+
+.completion-note {
+  padding: var(--app-space-md);
+  border-radius: 0.75rem;
+  background: var(--app-color-success-container);
+}
+
+@include breakpoints.medium-up {
+  .booking-layout {
+    grid-template-columns: minmax(16rem, 0.75fr) minmax(0, 2fr);
+    align-items: start;
+  }
+
+  .availability-heading,
+  .selection-summary {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}

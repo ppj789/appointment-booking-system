@@ -2,6 +2,8 @@
 
 .staff-panel,
 .panel-header > div,
+.invitation-groups,
+.invitation-group,
 .invitation-list {
   display: grid;
   gap: var(--app-space-md);
@@ -16,7 +18,8 @@
 
 .panel-header h2,
 .panel-header p,
-.invitation-card h3,
+.group-header h3,
+.invitation-card h4,
 .invitation-card p,
 .invitation-card dl,
 .invitation-card dd {
@@ -56,9 +59,21 @@
   overflow-wrap: anywhere;
 }
 
-.status {
-  flex: 0 0 auto;
-  padding: 0.3rem 0.65rem;
+.invitation-groups {
+  gap: var(--app-space-xl);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--app-space-sm);
+}
+
+.group-header span {
+  display: inline-grid;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  place-items: center;
   border-radius: 999px;
   background: var(--app-color-page);
   color: var(--app-color-muted);
@@ -66,14 +81,12 @@
   font-weight: 700;
 }
 
-.status[data-status='ACTIVE'] {
-  background: var(--app-color-success-container);
-  color: var(--app-color-success);
-}
-
-.status[data-status='DRAFT'] {
-  background: var(--app-color-warning-container);
-  color: var(--app-color-warning);
+.group-empty {
+  margin: 0;
+  padding: var(--app-space-md);
+  border: 1px dashed var(--app-color-outline);
+  border-radius: var(--app-radius-card);
+  color: var(--app-color-muted);
 }
 
 .invitation-card dl {
