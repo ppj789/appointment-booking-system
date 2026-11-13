@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
@@ -19,9 +19,9 @@ import {
   durationLabel,
   InvitationDraftCommand,
   InvitationSummary,
-  invitationStatusLabel,
 } from '../../data-access/staff-invitation.models';
 import { StaffInvitationStore } from '../../data-access/staff-invitation.store';
+import { groupInvitations } from './invitation-groups';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,7 +36,7 @@ export class StaffInvitationsPanel implements OnInit {
   protected readonly store = inject(StaffInvitationStore);
   readonly timezone = input.required<string>();
   protected readonly durationLabel = durationLabel;
-  protected readonly statusLabel = invitationStatusLabel;
+  protected readonly invitationGroups = computed(() => groupInvitations(this.store.invitations()));
 
   ngOnInit(): void {
     void this.store.load();

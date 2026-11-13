@@ -184,7 +184,7 @@ To commit one of the returned slots:
 7. Repeat the identical request with the same UUID and capability. It returns the original result with `200 OK` and `Idempotency-Replayed: true` without creating another Appointment.
 8. Reuse that UUID with different input and confirm the safe `409 IDEMPOTENCY_KEY_REUSED` response.
 
-Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen will later render missing intervals as unavailable in the Branch timezone.
+Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen presents only those returned slots in the Branch timezone; missing intervals remain anonymous.
 
 Confirmation revalidates the capability, complete duration, 15-minute grid, and rolling horizon. PostgreSQL's shared exclusion constraint remains authoritative if another request occupies the slot concurrently. A successful transaction inserts the Reservation and immutable Appointment, consumes the Invitation, and only then returns the simulated confirmation. Conflicts create no partial booking and leave the Invitation usable.
 
@@ -273,4 +273,4 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, and the Staff Invitation draft/activation/revocation experience. The Guest booking and confirmation screen is not implemented yet, so that product operation still uses the generated Swagger UI. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
+Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, the Staff Invitation lifecycle, and the public Guest booking/simulated-confirmation journey. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.

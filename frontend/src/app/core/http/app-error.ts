@@ -22,6 +22,12 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   AUTHENTICATION_REQUIRED: 'Your session has ended. Please sign in again.',
   ACCESS_DENIED: 'You do not have access to that action.',
   CALENDAR_CONFLICT: 'That time overlaps an existing appointment or unavailable block.',
+  INVITATION_UNAVAILABLE: 'This booking link is unavailable. Ask the Staff member for a new link.',
+  SLOT_UNAVAILABLE: 'That time was just taken. Choose another available time.',
+  SLOT_OUTSIDE_HORIZON: 'Choose a time within the next 14 days.',
+  UNSUPPORTED_DURATION: 'Choose one of the available appointment durations.',
+  INVALID_SLOT: 'Choose one of the available appointment times.',
+  IDEMPOTENCY_KEY_REUSED: 'The booking could not be retried safely. Choose the time again.',
 };
 
 export function toAppError(error: unknown): AppError {
