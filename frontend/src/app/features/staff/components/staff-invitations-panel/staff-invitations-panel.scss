@@ -1,0 +1,112 @@
+@use 'breakpoints';
+
+.staff-panel,
+.panel-header > div,
+.invitation-list {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.panel-header {
+  display: grid;
+  align-items: start;
+  gap: var(--app-space-md);
+  margin-bottom: var(--app-space-lg);
+}
+
+.panel-header h2,
+.panel-header p,
+.invitation-card h3,
+.invitation-card p,
+.invitation-card dl,
+.invitation-card dd {
+  margin: 0;
+}
+
+.panel-header p,
+.invitation-card header p,
+.invitation-card dt {
+  color: var(--app-color-muted);
+}
+
+.panel-header button {
+  justify-self: start;
+}
+
+.invitation-card {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.invitation-card header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--app-space-md);
+}
+
+.invitation-card header > div {
+  display: grid;
+  min-width: 0;
+  gap: var(--app-space-sm);
+}
+
+.invitation-card header p,
+.description {
+  overflow-wrap: anywhere;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--app-color-page);
+  color: var(--app-color-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status[data-status='ACTIVE'] {
+  background: var(--app-color-success-container);
+  color: var(--app-color-success);
+}
+
+.status[data-status='DRAFT'] {
+  background: var(--app-color-warning-container);
+  color: var(--app-color-warning);
+}
+
+.invitation-card dl {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+.invitation-card dt {
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.invitation-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-space-sm);
+}
+
+@include breakpoints.medium-up {
+  .panel-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .panel-header button {
+    justify-self: end;
+  }
+
+  .invitation-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .invitation-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

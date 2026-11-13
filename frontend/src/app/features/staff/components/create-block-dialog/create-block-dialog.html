@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Add unavailable time</h2>
+
+<mat-dialog-content>
+  <dl>
+    <div>
+      <dt>Purpose</dt>
+      <dd>Unavailable</dd>
+    </div>
+    <div>
+      <dt>Start</dt>
+      <dd>{{ data.command.startAt | branchDateTime: timezone }}</dd>
+    </div>
+    <div>
+      <dt>End</dt>
+      <dd>{{ data.command.endAt | branchDateTime: timezone }}</dd>
+    </div>
+  </dl>
+  <p>Times are shown in {{ timezone }}.</p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" [mat-dialog-close]="false">Cancel</button>
+  <button mat-flat-button type="button" [mat-dialog-close]="true">Add block</button>
+</mat-dialog-actions>

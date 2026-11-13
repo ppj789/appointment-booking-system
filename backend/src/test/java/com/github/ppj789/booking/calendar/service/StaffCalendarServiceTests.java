@@ -265,8 +265,11 @@ class StaffCalendarServiceTests {
     private DataIntegrityViolationException overlapViolation() {
         ConstraintViolationException hibernateViolation = new ConstraintViolationException(
                 "calendar overlap",
-                new SQLException("calendar overlap"),
-                "ex_calendar_reservation_staff_time");
+                new SQLException(
+                        "violates exclusion constraint "
+                                + "\"ex_calendar_reservation_staff_time\"",
+                        "23P01"),
+                null);
         return new DataIntegrityViolationException("calendar overlap", hibernateViolation);
     }
 

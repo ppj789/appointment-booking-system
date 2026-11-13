@@ -1,0 +1,135 @@
+<section class="staff-panel" aria-labelledby="calendar-title">
+  <header class="panel-header">
+    <div>
+      <h2 id="calendar-title">Calendar</h2>
+      <p>
+        Drag across a day to mark unavailable time in {{ timezone() }}. Keyboard users can focus a
+        day, move with the arrow keys, extend with Shift + arrow, and press Enter to confirm. On a
+        small screen, swipe sideways or use the scrollbar to view the remaining days.
+      </p>
+    </div>
+  </header>
+
+  <nav class="week-navigation" aria-label="Calendar week">
+    <button mat-stroked-button type="button" (click)="store.previousWeek()">Previous</button>
+    <button mat-button type="button" (click)="store.currentWeek()">Today</button>
+    <button mat-stroked-button type="button" (click)="store.nextWeek()">Next</button>
+    @if (store.week(); as week) {
+      <strong>{{ week.label }}</strong>
+    }
+  </nav>
+
+  @if (store.error(); as error) {
+    <app-error-state
+      title="Calendar action could not be completed"
+      [message]="error.message"
+      [correlationId]="error.correlationId"
+      [retryable]="true"
+      (retry)="store.refresh()"
+    />
+  }
+
+  @if (selectionError(); as error) {
+    <p class="selection-error" role="alert">{{ error }}</p>
+  }
+
+  @if (store.loading()) {
+    <app-loading-state label="Loading calendar…" />
+  } @else if (store.calendar() && store.week(); as week) {
+    <div
+      #calendarScroll
+      class="calendar-scroll surface-card"
+      tabindex="0"
+      aria-label="Seven-day calendar. Scroll vertically for all 24 hours and horizontally for days."
+    >
+      <div class="calendar-grid">
+        <div class="calendar-corner" aria-hidden="true"></div>
+        @for (day of week.days; track day.dateKey) {
+          <div class="day-heading">{{ day.label }}</div>
+        }
+
+        <div class="time-rail" aria-hidden="true">
+          @for (hour of hours; track hour) {
+            <span [style.top.px]="hour * 48">{{ hourLabel(hour) }}</span>
+          }
+        </div>
+
+        @for (day of week.days; track day.dateKey; let dayIndex = $index) {
+          <div
+            class="day-column"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="
+              day.label +
+              '. Use Up and Down to choose a time, Shift plus Up or Down to extend it, and Enter to confirm.'
+            "
+            (keydown)="handleCalendarKey($event, dayIndex, day)"
+            (pointerdown)="startSelection($event, dayIndex)"
+            (pointermove)="updateSelection($event, dayIndex)"
+            (pointerup)="finishSelection($event, day)"
+            (pointercancel)="cancelSelection($event)"
+          >
+            <div
+              class="elapsed-time"
+              [style.height.px]="(elapsedMinutes(day) / 60) * 48"
+              aria-hidden="true"
+            ></div>
+            @for (segment of segmentsByDay()[dayIndex]; track segment.id) {
+              <article
+                class="calendar-entry"
+                [attr.data-kind]="segment.kind"
+                [style.top.px]="segment.top"
+                [style.height.px]="segment.height"
+              >
+                <strong>{{ segment.title }}</strong>
+                <span>{{ segment.time }}</span>
+                <span>{{ segment.detail }}</span>
+              </article>
+            }
+            @if (draftSelection(); as selection) {
+              @if (selection.dayIndex === dayIndex) {
+                <div
+                  class="draft-selection"
+                  [style.top.px]="(selection.startMinutes / 60) * 48"
+                  [style.height.px]="((selection.endMinutes - selection.startMinutes) / 60) * 48"
+                  aria-hidden="true"
+                >
+                  Unavailable
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <section class="block-list" aria-labelledby="block-list-title">
+      <h3 id="block-list-title">Unavailable time this week</h3>
+      @if (blocks().length === 0) {
+        <app-empty-state
+          title="No unavailable time"
+          message="This week has no availability blocks."
+        />
+      } @else {
+        <div class="block-cards">
+          @for (block of blocks(); track block.id) {
+            <article class="block-card surface-card">
+              <span>
+                {{ block.startAt | branchDateTime: timezone() }} to
+                {{ block.endAt | branchDateTime: timezone() }}
+              </span>
+              <button
+                mat-stroked-button
+                type="button"
+                [disabled]="!canRemove(block) || store.actionPending()"
+                (click)="removeBlock(block)"
+              >
+                Remove
+              </button>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</section>

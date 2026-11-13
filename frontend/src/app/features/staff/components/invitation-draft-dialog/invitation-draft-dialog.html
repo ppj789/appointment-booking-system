@@ -1,0 +1,55 @@
+<h2 mat-dialog-title>{{ editing ? 'Edit Invitation draft' : 'Create Invitation draft' }}</h2>
+
+<mat-dialog-content>
+  <form id="invitation-draft-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Appointment title</mat-label>
+      <input matInput formControlName="title" maxlength="120" />
+      @if (form.controls.title.hasError('required')) {
+        <mat-error>Title is required.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Description</mat-label>
+      <textarea matInput formControlName="description" maxlength="2000" rows="4"></textarea>
+      @if (form.controls.description.hasError('required')) {
+        <mat-error>Description is required.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Guest display name</mat-label>
+      <input matInput formControlName="guestDisplayName" maxlength="100" />
+      @if (form.controls.guestDisplayName.hasError('required')) {
+        <mat-error>Guest name is required.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Guest email</mat-label>
+      <input matInput type="email" formControlName="guestEmail" maxlength="254" />
+      @if (form.controls.guestEmail.hasError('required')) {
+        <mat-error>Guest email is required.</mat-error>
+      } @else if (form.controls.guestEmail.hasError('email')) {
+        <mat-error>Enter a valid email.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Default duration</mat-label>
+      <mat-select formControlName="defaultDurationMinutes">
+        @for (duration of durations; track duration) {
+          <mat-option [value]="duration">{{ durationLabel(duration) }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" mat-dialog-close>Cancel</button>
+  <button mat-flat-button type="submit" form="invitation-draft-form" [disabled]="form.invalid">
+    {{ editing ? 'Save changes' : 'Create draft' }}
+  </button>
+</mat-dialog-actions>

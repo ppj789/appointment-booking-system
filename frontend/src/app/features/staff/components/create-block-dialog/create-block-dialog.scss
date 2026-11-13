@@ -1,0 +1,18 @@
+mat-dialog-content,
+dl {
+  display: grid;
+  gap: var(--app-space-md);
+}
+
+dl,
+dd,
+p {
+  margin: 0;
+}
+
+dt {
+  margin-bottom: 0.25rem;
+  color: var(--app-color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
