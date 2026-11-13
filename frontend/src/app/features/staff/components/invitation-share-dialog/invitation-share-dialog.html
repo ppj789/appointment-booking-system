@@ -1,0 +1,22 @@
+<h2 mat-dialog-title>Share the Guest booking link</h2>
+
+<mat-dialog-content>
+  <p class="warning">
+    This link is shown only now. Copy it before closing. If it is lost, revoke this Invitation and
+    create a replacement draft.
+  </p>
+
+  <mat-form-field appearance="outline">
+    <mat-label>One-time Guest link</mat-label>
+    <input matInput readonly [value]="shareUrl" />
+  </mat-form-field>
+
+  @if (copied()) {
+    <p class="copy-status" role="status">Guest link copied.</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="copy()">Copy link</button>
+  <button mat-flat-button type="button" mat-dialog-close>Done</button>
+</mat-dialog-actions>

@@ -1,0 +1,89 @@
+<section class="staff-panel" aria-labelledby="invitations-title">
+  <header class="panel-header">
+    <div>
+      <h2 id="invitations-title">Invitations</h2>
+      <p>Create the appointment details, then activate and manually share the Guest link.</p>
+    </div>
+    <button mat-flat-button type="button" (click)="createDraft()">Create Invitation</button>
+  </header>
+
+  @if (store.error(); as error) {
+    <app-error-state
+      title="Invitation action could not be completed"
+      [message]="error.message"
+      [correlationId]="error.correlationId"
+      [retryable]="true"
+      (retry)="store.load()"
+    />
+  }
+
+  @if (store.loading()) {
+    <app-loading-state label="Loading Invitations…" />
+  } @else if (store.invitations().length === 0) {
+    <app-empty-state
+      title="No Invitations yet"
+      message="Create a draft when you are ready to invite a Guest."
+    />
+  } @else {
+    <div class="invitation-list">
+      @for (invitation of store.invitations(); track invitation.id) {
+        <article class="invitation-card surface-card">
+          <header>
+            <div>
+              <h3>{{ invitation.title }}</h3>
+              <p>{{ invitation.guest.displayName }} · {{ invitation.guest.email }}</p>
+            </div>
+            <span class="status" [attr.data-status]="invitation.status">
+              {{ statusLabel(invitation.status) }}
+            </span>
+          </header>
+
+          <p class="description">{{ invitation.description }}</p>
+
+          <dl>
+            <div>
+              <dt>Default duration</dt>
+              <dd>{{ durationLabel(invitation.defaultDurationMinutes) }}</dd>
+            </div>
+            <div>
+              <dt>Updated</dt>
+              <dd>{{ invitation.updatedAt | branchDateTime: timezone() }}</dd>
+            </div>
+          </dl>
+
+          @if (invitation.status === 'DRAFT' || invitation.status === 'ACTIVE') {
+            <footer>
+              @if (invitation.status === 'DRAFT') {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="store.actionId() === invitation.id"
+                  (click)="editDraft(invitation)"
+                >
+                  Edit
+                </button>
+                <button
+                  mat-flat-button
+                  type="button"
+                  [disabled]="store.actionId() === invitation.id"
+                  (click)="activate(invitation)"
+                >
+                  Activate
+                </button>
+              } @else {
+                <button
+                  mat-stroked-button
+                  type="button"
+                  [disabled]="store.actionId() === invitation.id"
+                  (click)="revoke(invitation)"
+                >
+                  Revoke
+                </button>
+              }
+            </footer>
+          }
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,5 +1,7 @@
 package com.github.ppj789.booking.appointment.service;
 
+import static com.github.ppj789.booking.platform.persistence.DatabaseConstraintMatcher.matches;
+
 import com.github.ppj789.booking.appointment.exception.IdempotencyKeyReusedException;
 import com.github.ppj789.booking.appointment.exception.SlotUnavailableException;
 import com.github.ppj789.booking.appointment.persistence.AppointmentEntity;
@@ -19,7 +21,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -149,7 +150,7 @@ public class AppointmentConfirmationService {
         try {
             reservationRepository.saveAndFlush(reservation);
         } catch (DataIntegrityViolationException conflict) {
-            if (!hasConstraint(conflict, CALENDAR_OVERLAP_CONSTRAINT)) {
+            if (!matches(conflict, CALENDAR_OVERLAP_CONSTRAINT)) {
                 throw conflict;
             }
             throw new SlotUnavailableException();
@@ -160,25 +161,11 @@ public class AppointmentConfirmationService {
         try {
             appointmentRepository.saveAndFlush(appointment);
         } catch (DataIntegrityViolationException conflict) {
-            if (!hasConstraint(conflict, IDEMPOTENCY_KEY_CONSTRAINT)) {
+            if (!matches(conflict, IDEMPOTENCY_KEY_CONSTRAINT)) {
                 throw conflict;
             }
             throw new IdempotencyKeyReusedException();
         }
-    }
-
-    private static boolean hasConstraint(
-            DataIntegrityViolationException exception,
-            String expectedName) {
-        Throwable cause = exception;
-        while (cause != null) {
-            if (cause instanceof ConstraintViolationException constraintViolation
-                    && expectedName.equals(constraintViolation.getConstraintName())) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
     }
 
     public record ConfirmationResult(

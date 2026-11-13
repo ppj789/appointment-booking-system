@@ -1,0 +1,219 @@
+@use 'breakpoints';
+
+.staff-panel,
+.panel-header > div,
+.block-list {
+  display: grid;
+  gap: var(--app-space-sm);
+}
+
+.panel-header {
+  display: grid;
+  align-items: start;
+  gap: var(--app-space-md);
+}
+
+.panel-header h2,
+.panel-header p,
+.block-list h3 {
+  margin: 0;
+}
+
+.panel-header p {
+  color: var(--app-color-muted);
+}
+
+.selection-error {
+  margin: 0;
+  padding: var(--app-space-sm) var(--app-space-md);
+  border-left: 0.25rem solid var(--app-color-error);
+  background: var(--app-color-error-container);
+  color: var(--app-color-on-error-container);
+}
+
+.week-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--app-space-sm);
+  margin-block: var(--app-space-md);
+}
+
+.week-navigation strong {
+  width: 100%;
+  color: var(--app-color-muted);
+}
+
+.calendar-scroll {
+  max-height: 36rem;
+  padding: 0;
+  overflow-x: scroll;
+  overflow-y: auto;
+  scrollbar-color: var(--app-color-primary) var(--app-color-surface);
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+}
+
+.calendar-scroll::-webkit-scrollbar {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+.calendar-scroll::-webkit-scrollbar-track {
+  background: var(--app-color-surface);
+}
+
+.calendar-scroll::-webkit-scrollbar-thumb {
+  border: 0.15rem solid var(--app-color-surface);
+  border-radius: 999px;
+  background: var(--app-color-primary);
+}
+
+.calendar-grid {
+  display: grid;
+  min-width: 68rem;
+  grid-template-columns: 4.5rem repeat(7, minmax(9rem, 1fr));
+  grid-template-rows: 3.25rem 72rem;
+}
+
+.calendar-corner,
+.day-heading {
+  position: sticky;
+  z-index: 3;
+  top: 0;
+  display: grid;
+  align-items: center;
+  padding-inline: var(--app-space-sm);
+  border-bottom: 1px solid var(--app-color-outline);
+  background: var(--app-color-surface);
+  font-weight: 700;
+}
+
+.calendar-corner {
+  z-index: 4;
+  left: 0;
+}
+
+.time-rail {
+  position: sticky;
+  z-index: 2;
+  left: 0;
+  border-right: 1px solid var(--app-color-outline);
+  background: var(--app-color-surface);
+}
+
+.time-rail span {
+  position: absolute;
+  right: var(--app-space-sm);
+  transform: translateY(-0.5rem);
+  color: var(--app-color-muted);
+  font-size: 0.75rem;
+}
+
+.day-column {
+  position: relative;
+  border-right: 1px solid var(--app-color-outline);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(3rem - 1px),
+    var(--app-color-outline) calc(3rem - 1px),
+    var(--app-color-outline) 3rem
+  );
+  cursor: crosshair;
+  touch-action: pan-x;
+}
+
+.calendar-entry {
+  position: absolute;
+  right: 0.2rem;
+  left: 0.2rem;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  padding: 0.25rem;
+  overflow: hidden;
+  border: 1px solid var(--app-color-primary);
+  border-radius: 0.35rem;
+  background: var(--app-color-primary-container);
+  color: var(--app-color-text);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.elapsed-time {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 0;
+  background: var(--app-color-unavailable);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.calendar-entry[data-kind='block'] {
+  border-color: var(--app-color-outline);
+  background: var(--app-color-unavailable);
+  color: var(--app-color-muted);
+}
+
+.calendar-entry span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.draft-selection {
+  position: absolute;
+  right: 0.2rem;
+  left: 0.2rem;
+  z-index: 2;
+  display: grid;
+  align-items: center;
+  min-height: 0.75rem;
+  padding-inline: 0.25rem;
+  overflow: hidden;
+  border: 2px solid var(--app-color-primary);
+  border-radius: 0.35rem;
+  background: var(--app-color-primary-container);
+  color: var(--app-color-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.block-list {
+  margin-top: var(--app-space-lg);
+}
+
+.block-cards {
+  display: grid;
+  gap: var(--app-space-sm);
+}
+
+.block-card {
+  display: grid;
+  align-items: center;
+  gap: var(--app-space-md);
+  padding: var(--app-space-md);
+}
+
+.block-card button {
+  justify-self: start;
+}
+
+@include breakpoints.medium-up {
+  .block-card {
+    grid-template-columns: 1fr auto;
+  }
+
+  .block-card button {
+    justify-self: end;
+  }
+
+  .week-navigation strong {
+    width: auto;
+    margin-left: auto;
+  }
+}

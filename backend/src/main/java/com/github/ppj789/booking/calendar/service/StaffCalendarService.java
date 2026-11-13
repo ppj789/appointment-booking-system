@@ -1,6 +1,7 @@
 package com.github.ppj789.booking.calendar.service;
 
 import static com.github.ppj789.booking.identity.security.AccountAccessPolicy.requireActiveStaff;
+import static com.github.ppj789.booking.platform.persistence.DatabaseConstraintMatcher.matches;
 
 import com.github.ppj789.booking.appointment.persistence.AppointmentEntity;
 import com.github.ppj789.booking.appointment.persistence.AppointmentRepository;
@@ -21,7 +22,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -82,7 +82,7 @@ public class StaffCalendarService {
         try {
             reservationRepository.saveAndFlush(reservation);
         } catch (DataIntegrityViolationException conflict) {
-            if (!isCalendarOverlap(conflict)) {
+            if (!matches(conflict, CALENDAR_OVERLAP_CONSTRAINT)) {
                 throw conflict;
             }
             throw new CalendarConflictException();
@@ -118,19 +118,6 @@ public class StaffCalendarService {
                 .filter(account -> account.getBranch().getId().equals(actor.branch().id()))
                 .orElseThrow(() -> new AccessDeniedException("Active Staff access is required"));
         return staff;
-    }
-
-    private static boolean isCalendarOverlap(DataIntegrityViolationException exception) {
-        Throwable cause = exception;
-        while (cause != null) {
-            if (cause instanceof ConstraintViolationException constraintViolation
-                    && CALENDAR_OVERLAP_CONSTRAINT.equals(
-                            constraintViolation.getConstraintName())) {
-                return true;
-            }
-            cause = cause.getCause();
-        }
-        return false;
     }
 
     private static CalendarAppointment toCalendarAppointment(AppointmentEntity appointment) {

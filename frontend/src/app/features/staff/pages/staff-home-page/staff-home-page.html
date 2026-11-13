@@ -1,0 +1,25 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <h1>Staff workspace</h1>
+      @if (session.context()?.branch; as branch) {
+        <p>{{ branch.name }} · {{ branch.displayAddress }} · {{ branch.timezone }}</p>
+      }
+    </div>
+  </header>
+
+  @if (session.context()?.branch; as branch) {
+    <mat-tab-group animationDuration="0ms">
+      <mat-tab label="Calendar">
+        <div class="tab-content">
+          <app-staff-calendar-panel [timezone]="branch.timezone" />
+        </div>
+      </mat-tab>
+      <mat-tab label="Invitations">
+        <div class="tab-content">
+          <app-staff-invitations-panel [timezone]="branch.timezone" />
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  }
+</section>

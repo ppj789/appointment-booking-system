@@ -21,6 +21,7 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   LOGIN_RATE_LIMITED: 'Too many sign-in attempts. Please wait and try again.',
   AUTHENTICATION_REQUIRED: 'Your session has ended. Please sign in again.',
   ACCESS_DENIED: 'You do not have access to that action.',
+  CALENDAR_CONFLICT: 'That time overlaps an existing appointment or unavailable block.',
 };
 
 export function toAppError(error: unknown): AppError {
