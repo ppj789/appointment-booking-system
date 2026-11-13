@@ -41,6 +41,23 @@ export function calendarSelectionCommand(
   };
 }
 
+export function calendarSelectionAnnouncement(
+  day: BranchCalendarDay,
+  selection: CalendarDraftSelection,
+  timezone: string,
+  locale = 'en-ZA',
+): string {
+  const command = calendarSelectionCommand(day, selection, timezone);
+  const formatter = new Intl.DateTimeFormat(locale, {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${day.label}. Unavailable time selected from ${formatter.format(
+    new Date(command.startAt),
+  )} to ${formatter.format(new Date(command.endAt))} in ${timezone}.`;
+}
+
 export function isCalendarSelectionFuture(
   command: CreateAvailabilityBlockCommand,
   now = new Date(),

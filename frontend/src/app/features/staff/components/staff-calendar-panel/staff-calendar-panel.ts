@@ -39,6 +39,7 @@ import {
 import {
   CALENDAR_SLOTS_PER_DAY,
   CalendarDraftSelection,
+  calendarSelectionAnnouncement,
   calendarSelectionCommand,
   calendarSelectionFromSlots,
   isCalendarSelectionFuture,
@@ -73,6 +74,14 @@ export class StaffCalendarPanel implements OnInit {
   protected readonly hours = Array.from({ length: 24 }, (_, hour) => hour);
   protected readonly draftSelection = signal<CalendarDraftSelection | null>(null);
   protected readonly selectionError = signal<string | null>(null);
+  protected readonly selectionAnnouncement = computed(() => {
+    const selection = this.draftSelection();
+    const day = this.store.week()?.days[selection?.dayIndex ?? -1];
+    if (!selection || !day) {
+      return '';
+    }
+    return calendarSelectionAnnouncement(day, selection, this.timezone());
+  });
   protected readonly segmentsByDay = computed(() => {
     const calendar = this.store.calendar();
     const week = this.store.week();
