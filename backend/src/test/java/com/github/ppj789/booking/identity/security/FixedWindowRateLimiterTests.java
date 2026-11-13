@@ -42,4 +42,25 @@ class FixedWindowRateLimiterTests {
         assertDoesNotThrow(() -> limiter.requirePermit("login", "shared-value", limit));
         assertDoesNotThrow(() -> limiter.requirePermit("account-setup", "shared-value", limit));
     }
+
+    @Test
+    void boundsDistinctActiveWindowsAndReclaimsExpiredEntries() {
+        Instant start = Instant.parse("2026-11-08T08:00:00Z");
+        Clock clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(start);
+        FixedWindowRateLimiter limiter = new FixedWindowRateLimiter(clock, new SecretHasher());
+        RateLimit limit = new RateLimit(1, Duration.ofMinutes(5));
+
+        for (int index = 0; index < FixedWindowRateLimiter.MAXIMUM_WINDOWS; index++) {
+            limiter.requirePermit("guest-source", "source-" + index, limit);
+        }
+
+        RateLimitExceededException exception = assertThrows(
+                RateLimitExceededException.class,
+                () -> limiter.requirePermit("guest-source", "overflow", limit));
+        assertEquals(start.plus(Duration.ofMinutes(5)), exception.getRetryAt());
+
+        when(clock.instant()).thenReturn(start.plus(Duration.ofMinutes(5)));
+        assertDoesNotThrow(() -> limiter.requirePermit("guest-source", "overflow", limit));
+    }
 }

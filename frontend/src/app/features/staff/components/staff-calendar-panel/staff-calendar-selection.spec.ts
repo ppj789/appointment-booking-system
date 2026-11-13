@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BranchCalendarDay } from '../../../../core/time/branch-calendar';
 import {
+  calendarSelectionAnnouncement,
   calendarSelectionCommand,
   calendarSelectionFromSlots,
   isCalendarSelectionFuture,
@@ -44,5 +45,13 @@ describe('calendar selection', () => {
 
     expect(isCalendarSelectionFuture(command, new Date('2026-11-16T05:59:59.999Z'))).toBe(true);
     expect(isCalendarSelectionFuture(command, new Date(command.startAt))).toBe(false);
+  });
+
+  it('announces the selected Branch-local interval for assistive technology', () => {
+    const selection = calendarSelectionFromSlots(0, null, 32, 33);
+
+    expect(calendarSelectionAnnouncement(DAY, selection, 'Africa/Johannesburg')).toBe(
+      'Mon 16 Nov. Unavailable time selected from 08:00 to 08:30 in Africa/Johannesburg.',
+    );
   });
 });

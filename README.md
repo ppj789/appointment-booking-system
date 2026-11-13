@@ -258,6 +258,7 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 - Liveness reports only the application lifecycle and does not depend on PostgreSQL. Readiness includes the application readiness state and database connectivity. Health details are never exposed publicly.
 - The backend uses graceful shutdown with a bounded drain period. Docker Compose allows 30 seconds before forcing container termination.
 - Nginx and Spring Security apply restrictive content type, framing, referrer, browser-permission, and Content Security Policy headers. HSTS is intentionally absent from the local HTTP demonstration and belongs at the production TLS boundary.
+- Nginx overwrites client-supplied forwarding chains with its observed source address, and the backend resolves forwarded addresses only in the supported edge-proxy topology.
 
 ## Security posture
 
@@ -266,11 +267,11 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 - Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
 - Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
-- Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits, and expose selectable intervals without private occupancy details.
+- Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits with a 10,000-window process-wide hard cap, and expose selectable intervals without private occupancy details.
 - Guest confirmation requires a client-generated UUID Idempotency Key. Identical retries replay the original committed result; key reuse with changed input is rejected, and concurrent calendar conflicts cannot consume the Invitation or expose existing booking details.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
 - The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, safe path, and correlation ID. An outer request filter records every completion and logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
 
 ## Current limitation
 
-Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, the Staff Invitation lifecycle, and the public Guest booking/simulated-confirmation journey. The real PostgreSQL transaction and conflict behaviour still require the later assembled Compose walkthrough; automated tests intentionally remain isolated from PostgreSQL and other services.
+Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, the Staff Invitation lifecycle, and the public Guest booking/simulated-confirmation journey. The developer has exercised the assembled journey against PostgreSQL; a clean-checkout run plus explicit contested-slot, rollback, persistence, restart, and shutdown evidence remains for the final Compose walkthrough. Automated suites intentionally remain isolated from PostgreSQL and other services.

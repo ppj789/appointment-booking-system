@@ -32,6 +32,10 @@
     <p class="selection-error" role="alert">{{ error }}</p>
   }
 
+  <p class="visually-hidden" aria-live="polite" aria-atomic="true">
+    {{ selectionAnnouncement() }}
+  </p>
+
   @if (store.loading()) {
     <app-loading-state label="Loading calendar…" />
   } @else if (store.calendar() && store.week(); as week) {
