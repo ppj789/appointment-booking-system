@@ -25,10 +25,12 @@ public class FixedWindowRateLimiter {
         if (!windows.containsKey(key) && windows.size() >= MAXIMUM_WINDOWS) {
             windows.entrySet().removeIf(entry -> !now.isBefore(entry.getValue().expiresAt()));
             if (windows.size() >= MAXIMUM_WINDOWS) {
-                Instant retryAt = windows.values().stream()
-                        .map(Window::expiresAt)
-                        .min(Instant::compareTo)
-                        .orElse(now.plus(limit.window()));
+                Instant retryAt = windows.values().iterator().next().expiresAt();
+                for (Window window : windows.values()) {
+                    if (window.expiresAt().isBefore(retryAt)) {
+                        retryAt = window.expiresAt();
+                    }
+                }
                 throw new RateLimitExceededException(retryAt);
             }
         }
