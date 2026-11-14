@@ -1,8 +1,59 @@
 # Appointment Booking System
 
-A production-minded full-stack Appointment Booking System assessment.
+A production-minded full-stack system for scheduling an appointment with a specific Staff member at a physical Branch.
 
-The current increment provides the Angular, Spring Boot, and PostgreSQL runtime layers plus an authenticated Angular application shell, an Admin Staff-management experience, one-time Staff account setup, a private Staff calendar with Availability Block management, the Staff Invitation lifecycle, privacy-safe Guest availability, and atomic idempotent Appointment confirmation.
+## Quick start
+
+Requirements: Docker with Compose support.
+
+```bash
+docker compose up --build
+```
+
+When all three containers are healthy:
+
+- Application: <http://localhost:8080>
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- Health: <http://localhost:8080/actuator/health>
+
+Local demonstration login:
+
+- Email: `admin@example.test`
+- Password: `admin`
+
+The local profile creates this synthetic Admin and two synthetic Branches for repeatable developer testing. The short credential is a deliberate local-only convenience, not a production default or a value accepted by the Staff password-setup flow. Outside the `local` profile, startup never creates an account; production provisioning is an explicit operational responsibility.
+
+### Five-step booking walkthrough
+
+1. Sign in as the local Admin and select **Add Staff**.
+2. Create a Staff account at either demo Branch and copy the one-time setup link.
+3. Open the link in a private browser session, choose a 12–128 character password, and sign in as Staff.
+4. Create and activate an Invitation, then copy its one-time Guest link. Availability Blocks can be added first when particular times must be unavailable.
+5. Open the Guest link in another private session, choose a returned time and duration, and confirm the Appointment. The committed simulated confirmation includes its `APT-...` reference and Branch details.
+
+The generated OpenAPI JSON and YAML are available at `/v3/api-docs` and `/v3/api-docs.yaml`. The [Local Demonstration Walkthrough](https://github.com/ppj789/appointment-booking-system/wiki/Local-Demonstration-Walkthrough) contains the detailed UI and API exercise stories; the rest of the [project wiki](https://github.com/ppj789/appointment-booking-system/wiki) documents implemented journeys and boundaries.
+
+Stop the stack while retaining the local database:
+
+```bash
+docker compose down
+```
+
+Delete the disposable local database explicitly:
+
+```bash
+docker compose down --volumes
+```
+
+The second command permanently removes local assessment data.
+
+## Product interpretation and trade-offs
+
+This solution interprets a Branch Appointment as time with a specific Staff member—for example, a follow-up with an adviser who may not work at the Branch every day. It is not modelled as an anonymous Branch ticket or queue position.
+
+Staff therefore creates a single-use Invitation for a known Guest and appointment purpose. The Guest still schedules the Appointment: they choose the available start time and duration and commit the booking themselves. This boundary supports Staff-specific availability, keeps private calendar occupancy hidden, and gives one clear owner to the authoritative overlap rule.
+
+Within the assessment capacity, the implementation prioritises a complete, secure vertical journey and race-safe booking over a broader discovery catalogue. The trade-off is that a Customer cannot currently begin at a public Branch page, select a service, and discover suitable Staff. A future customer-initiated journey can add Branch and service/reason discovery before routing to eligible Staff availability, while retaining Invitations for known-adviser follow-ups.
 
 ## Technology baseline
 
@@ -12,33 +63,34 @@ The current increment provides the Angular, Spring Boot, and PostgreSQL runtime 
 - Maven Wrapper
 - PostgreSQL 18
 - Flyway Community Edition, owned by the backend
+- Unprivileged Nginx frontend runtime
 - Docker Compose
 
 ## Repository layout
 
 ```text
-frontend/   Angular application and Nginx image
-backend/    Spring Boot API, Flyway migrations, OpenAPI contract and image
+frontend/   Angular application, Nginx configuration and frontend image
+backend/    Spring Boot API, Flyway migrations, OpenAPI contract and backend image
 compose.yaml
 ```
 
-Flyway SQL is stored under `backend/src/main/resources/db/migration/`. PostgreSQL is a separate runtime service, not a separate schema repository.
+Flyway SQL is stored under `backend/src/main/resources/db/migration/`. The backend owns and ships the single migration chain; PostgreSQL is a runtime service rather than a separate schema project.
 
 ## Source structure
 
-The frontend uses standalone Angular components and lazy-loaded feature routes. Application-wide concerns are kept separate from feature code, and reusable UI moves to `shared/` only after more than one feature needs it:
+The frontend uses standalone Angular components and lazy-loaded feature routes. Application-wide concerns remain separate from feature code, and reusable UI moves to `shared/` only after more than one feature proves the need:
 
 ```text
 frontend/src/app/
 ├── core/          application-wide configuration, guards, interceptors and singleton services
 ├── layout/        application shells and navigation frames
 ├── features/      feature-owned pages, components, models, routes and API access
-├── shared/        reusable presentation/utilities with no feature ownership (created when needed)
+├── shared/        reusable presentation and utilities with no feature ownership
 ├── app.config.ts
 └── app.routes.ts
 ```
 
-The backend is organized by business feature rather than one global controllers/services/repositories tree. Each feature owns its adapters and logic:
+The backend is organised by business feature rather than one global controller/service/repository tree. Each feature owns its adapters and logic:
 
 ```text
 com.github.ppj789.booking/
@@ -52,159 +104,15 @@ com.github.ppj789.booking/
 └── AppointmentBookingApiApplication.java
 ```
 
-Feature packages are added only when their delivery ticket introduces real code; the repository does not keep empty architectural placeholder folders.
+Feature packages are added only when delivery introduces real code; the repository does not keep empty architectural placeholder folders. Frontend styling is mobile-first: `frontend/src/_theme.scss` owns platform design tokens, while `frontend/src/styles/_breakpoints.scss` owns shared responsive boundaries.
 
-Frontend styling is mobile-first. `frontend/src/_theme.scss` owns platform design tokens, while `frontend/src/styles/_breakpoints.scss` owns shared responsive boundaries. Component styles consume those decisions but retain responsibility for their own layout. Repeated UI patterns, such as data tables, move into a Material-based component under `shared/ui/` once the product introduces a concrete reusable need.
+## Container assembly
 
-## Run the complete foundation
+There are two Dockerfiles because the frontend and backend have different build and runtime requirements. The frontend image builds Angular with Node and serves the static output from unprivileged Nginx. The backend image builds and verifies the Spring Boot application with Maven, then runs it as a non-root user on a Java runtime.
 
-Requirements: Docker with Compose support.
+Compose assembles those two application images with PostgreSQL, private service networking, health-based startup ordering, persistent local database storage and disposable local configuration. The two Dockerfiles are build/runtime definitions for independent deployable components; Compose is the local orchestration definition for the complete system.
 
-```bash
-docker compose up --build
-```
-
-When the services are healthy:
-
-- Application shell: <http://localhost:8080>
-- Swagger UI: <http://localhost:8080/swagger-ui.html>
-- Generated OpenAPI JSON: <http://localhost:8080/v3/api-docs>
-- Generated OpenAPI YAML: <http://localhost:8080/v3/api-docs.yaml>
-- Health: <http://localhost:8080/actuator/health>
-- Liveness: <http://localhost:8080/actuator/health/liveness>
-- Readiness: <http://localhost:8080/actuator/health/readiness>
-
-The local profile generates the OpenAPI description from implemented Spring controllers, DTOs, validation rules, and focused Swagger annotations. API documentation is disabled by default outside the local profile.
-
-When the `local` profile is active, the demo-data initializer creates one clearly synthetic Admin if it is absent:
-
-- Email: `admin@example.test`
-- Password: `admin`
-
-The Admin can manage Staff across all configured Branches; Staff accounts remain attached to exactly one Branch. These are local demonstration values, not production defaults. Outside the `local` profile, the application never creates an Admin. Production account provisioning is an explicit operational responsibility outside this assessment POC.
-
-### Exercise Staff account setup locally
-
-The Angular application provides the primary Admin and Staff setup flow:
-
-1. Open <http://localhost:8080> and sign in with the local Admin credentials above.
-2. Filter Staff by Branch or select **Add Staff**.
-3. Choose a configured Branch, enter a synthetic display name and `.test` email, then create the Staff account.
-4. Copy the one-time setup link before closing the result. Open it in a separate private browser session, set a 12–128 character password, then sign in as the new Staff member.
-5. Pending Staff can receive a confirmed replacement setup link. Active Staff can be deactivated only when no active Invitation or future Appointment blocks the operation.
-
-Swagger UI remains available for direct API inspection:
-
-1. Call `POST /api/v1/sessions` with the local Admin credentials above.
-2. Call `GET /api/v1/admin/branches` and select a Branch public code.
-3. Call `POST /api/v1/admin/staff` with a unique Staff email:
-
-   ```json
-   {
-     "branchCode": "JHB-DEMO",
-     "displayName": "Demo Staff",
-     "email": "staff@example.test"
-   }
-   ```
-
-4. Copy the value after `#token=` from the one-time `setupUrl` response.
-5. Call `POST /api/v1/account-setup`, supply that value in `X-Setup-Token`, and choose a password between 12 and 128 characters. A successful `204 No Content` activates the account but does not create a session.
-6. Log out the Admin, then sign in with the new Staff email and password.
-7. Call `GET /api/v1/sessions/current` to read the safe account, workflow type, and Branch context used to bootstrap the frontend session state.
-
-The setup URL is returned once with `Cache-Control: no-store`; only its SHA-256 hash is persisted. Reusing a consumed token returns the same generic unavailable response as an invalid, expired, or revoked token.
-
-### Exercise Staff Availability Blocks locally
-
-After signing in as active Staff, Swagger UI can demonstrate the private calendar boundary:
-
-1. Call `GET /api/v1/me/calendar` with required UTC `from` and `to` instants no more than 31 days apart.
-2. Call `POST /api/v1/me/availability-blocks` with future UTC boundaries on the 15-minute grid:
-
-   ```json
-   {
-     "startAt": "replace-with-a-future-15-minute-boundary",
-     "endAt": "replace-with-a-later-15-minute-boundary"
-   }
-   ```
-
-3. Read the calendar again and confirm the returned block uses the committed UTC interval.
-4. Attempt an overlapping block and confirm the safe `409 CALENDAR_CONFLICT` response.
-5. Call `DELETE /api/v1/me/availability-blocks/{blockId}` while the block remains in the future.
-
-The account ID and Branch scope come from the authenticated session; they are never accepted from the request. Calendar reads expose the owning Staff User's Appointment summary and private block intervals only. PostgreSQL's shared reservation exclusion constraint remains authoritative for overlap races.
-
-### Exercise the Staff Invitation lifecycle locally
-
-After signing in as active Staff, Swagger UI can demonstrate the private Invitation lifecycle:
-
-1. Call `GET /api/v1/me/invitations` to read the Staff-owned Invitation lifecycle state. Capability values and previously returned share links are never included.
-2. Call `POST /api/v1/me/invitations` to create a draft:
-
-   ```json
-   {
-     "title": "Account discussion",
-     "description": "Review the available account options.",
-     "guest": {
-       "displayName": "Alex Guest",
-       "email": "alex.guest@example.test"
-     },
-     "defaultDurationMinutes": 60
-   }
-   ```
-
-3. Optionally call `PATCH /api/v1/me/invitations/{invitationId}` while the Invitation is still a draft.
-4. Call `POST /api/v1/me/invitations/{invitationId}/activate` with no body.
-5. Copy the returned `shareUrl` immediately. It is returned once and cannot be retrieved later.
-6. If the link is lost or should no longer be usable, call `POST /api/v1/me/invitations/{invitationId}/revoke` and create a replacement draft.
-
-The backend derives immutable Staff and Branch ownership from the authenticated session. Activation uses a locked state transition, stores only a SHA-256 token hash, and returns the high-entropy capability in the URL fragment with `Cache-Control: no-store`. Drafts alone are editable, and only unused active Invitations are revocable.
-
-### Exercise Guest Invitation and availability access locally
-
-Use the raw value after `#token=` from the one-time Staff `shareUrl` as `X-Invitation-Token`:
-
-1. Call `GET /api/v1/guest/invitation` to read the Guest-safe appointment purpose, fixed Staff host, supported durations, and Branch context.
-2. Call `GET /api/v1/guest/availability` with a supported `durationMinutes`. Optional `from` values before backend time clamp forward, and `days` defaults to 14 with a maximum of 14.
-3. Confirm that returned slots are on the 15-minute UTC grid and omit every interval whose complete duration overlaps an Appointment or Availability Block.
-4. Repeat either request with an unknown, revoked, or consumed capability and confirm the same `404 INVITATION_UNAVAILABLE` response.
-
-To commit one of the returned slots:
-
-5. Generate a UUID and send it as `Idempotency-Key` with `POST /api/v1/guest/appointments`:
-
-   ```json
-   {
-     "startAt": "replace-with-a-returned-UTC-slot-start",
-     "durationMinutes": 60
-   }
-   ```
-
-6. Confirm the new request returns `201 Created`, the committed Appointment and Branch details, and the visible simulated confirmation.
-7. Repeat the identical request with the same UUID and capability. It returns the original result with `200 OK` and `Idempotency-Replayed: true` without creating another Appointment.
-8. Reuse that UUID with different input and confirm the safe `409 IDEMPOTENCY_KEY_REUSED` response.
-
-Both responses use `Cache-Control: no-store`. Availability contains selectable UTC start/end pairs only: it does not reveal reservation types, block reasons, Appointment details, Guest email, references, or lifecycle state. The Angular Guest screen presents only those returned slots in the Branch timezone; missing intervals remain anonymous.
-
-Confirmation revalidates the capability, complete duration, 15-minute grid, and rolling horizon. PostgreSQL's shared exclusion constraint remains authoritative if another request occupies the slot concurrently. A successful transaction inserts the Reservation and immutable Appointment, consumes the Invitation, and only then returns the simulated confirmation. Conflicts create no partial booking and leave the Invitation usable.
-
-Confirmation attempts are limited to 10 per Invitation capability per minute by default. This protects the public command without storing or logging the raw capability. Exceeding the limit returns `429 Too Many Requests` with a stable Problem Details code.
-
-Stop the stack while preserving the database volume:
-
-```bash
-docker compose down
-```
-
-Delete the disposable local database explicitly:
-
-```bash
-docker compose down --volumes
-```
-
-This destructive reset removes local assessment data. It is not a backup or production recovery procedure.
-
-## Run checks independently
+## Build and test independently
 
 Frontend:
 
@@ -222,43 +130,48 @@ cd backend
 ./mvnw verify
 ```
 
-Backend verification compiles the application, runs the isolated test suite, packages the application, and checks the Java source against the repository's focused Checkstyle rules.
+On Windows PowerShell, use `./mvnw.cmd verify`.
 
-On Windows PowerShell, use `./mvnw.cmd` instead.
+Backend verification compiles and packages the application, runs the focused unit and controller suite, and applies the repository Checkstyle rules. The backend Docker build also runs `mvn verify`; the frontend Docker build performs a production Angular build but does not run the frontend test suite.
 
-Neither automated suite requires the other application service or PostgreSQL to be running. Real Flyway/PostgreSQL and assembled-system behaviour are validated through the Compose path.
+Automated suites do not require the other application service or PostgreSQL. Real Flyway/PostgreSQL constraints and the assembled journey are validated through the Compose path. This is an explicit assessment trade-off: the strongest database and cross-service guarantees are not yet protected by automated Testcontainers or end-to-end tests.
 
 ## Local development
 
-For Angular development, start a local backend on port `8080`, then run:
+For Angular development, start the backend on port `8080`, then run:
 
 ```bash
 cd frontend
 npm start
 ```
 
-The Angular development proxy forwards API, health, OpenAPI, and Swagger UI requests to the backend.
+The Angular development proxy forwards API, health, OpenAPI and Swagger UI requests to the backend.
 
-For IntelliJ backend development, select a Java 25 SDK and run `AppointmentBookingApiApplication`. Start only PostgreSQL when needed:
+For backend development, select a Java 25 SDK and run `AppointmentBookingApiApplication`. PostgreSQL can be started independently with:
 
 ```bash
 docker compose up postgres
 ```
 
-The default local credentials are intentionally fake and may be overridden through a private `.env` copied from `.env.example`.
+The `local` Spring profile provides disposable database defaults. Other profiles require explicit `BOOKING_DB_URL`, `BOOKING_DB_USERNAME` and `BOOKING_DB_PASSWORD` values and fail startup when they are missing.
 
-The `local` Spring profile provides disposable PostgreSQL defaults for developer use. Outside that profile, startup requires `BOOKING_DB_URL`, `BOOKING_DB_USERNAME`, and `BOOKING_DB_PASSWORD`; missing values fail startup rather than silently selecting local credentials.
+## Correctness and data integrity
+
+- PostgreSQL's exclusion constraint is authoritative for overlapping Staff calendar reservations, including concurrent requests.
+- Appointment creation, Reservation creation and Invitation consumption commit in one transaction; a failed booking leaves the Invitation usable.
+- Guest confirmation uses an Idempotency Key. Identical retries replay the committed result, while changed input with the same key is rejected.
 
 ## Operability
 
 - Every backend request returns an `X-Correlation-ID`. A client-supplied canonical UUID is preserved; malformed or unsafe values are replaced with a server-generated UUID.
 - API failures use RFC 9457 `application/problem+json` responses with a stable `code` and the same `correlationId` returned in the header. Internal exception details are not exposed.
-- Backend stdout uses structured JSON. Request completion and handled-failure records contain operational metadata such as correlation ID, method, safe path, status, outcome, duration, and stable error code.
-- Logs exclude request and response bodies, query strings, cookies, credentials, personal details, session identifiers, and raw setup or Invitation capabilities. Unexpected server failures retain a server-side stack trace for diagnosis.
-- Liveness reports only the application lifecycle and does not depend on PostgreSQL. Readiness includes the application readiness state and database connectivity. Health details are never exposed publicly.
+- Backend stdout uses structured JSON. Request completion and handled-failure records contain correlation ID, method, safe path, status, outcome, duration and stable error code.
+- Logs exclude request and response bodies, query strings, cookies, credentials, personal details, session identifiers and raw setup or Invitation capabilities. Unexpected server failures retain a server-side stack trace for diagnosis.
+- Liveness reports only the application lifecycle and does not depend on PostgreSQL. Readiness includes application readiness and database connectivity. Health details are not exposed publicly.
 - The backend uses graceful shutdown with a bounded drain period. Docker Compose allows 30 seconds before forcing container termination.
-- Nginx and Spring Security apply restrictive content type, framing, referrer, browser-permission, and Content Security Policy headers. HSTS is intentionally absent from the local HTTP demonstration and belongs at the production TLS boundary.
+- Nginx and Spring Security apply restrictive content-type, framing, referrer, browser-permission and Content Security Policy headers. HSTS is intentionally absent from the local HTTP demonstration and belongs at the production TLS boundary.
 - Nginx overwrites client-supplied forwarding chains with its observed source address, and the backend resolves forwarded addresses only in the supported edge-proxy topology.
+- Backend and frontend containers run as non-root users.
 
 ## Security posture
 
@@ -267,11 +180,23 @@ The `local` Spring profile provides disposable PostgreSQL defaults for developer
 - Staff passwords use Spring Security's adaptive encoder, and setup capabilities are stored only as SHA-256 hashes.
 - Staff records are soft-deactivated rather than deleted. Active Invitations or future Appointments block deactivation without exposing Guest content.
 - Staff calendar commands derive ownership from the authenticated session. Availability Blocks and Appointments share authoritative PostgreSQL overlap protection.
-- Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, apply bounded in-memory rate limits with a 10,000-window process-wide hard cap, and expose selectable intervals without private occupancy details.
-- Guest confirmation requires a client-generated UUID Idempotency Key. Identical retries replay the original committed result; key reuse with changed input is rejected, and concurrent calendar conflicts cannot consume the Invitation or expose existing booking details.
+- Guest capability reads resolve only the stored token hash, return one generic unavailable response for unusable tokens, and expose selectable intervals without private occupancy details.
+- Guest confirmation requires a client-generated UUID Idempotency Key. Identical retries replay the original committed result; changed input with the same key is rejected, and concurrent calendar conflicts cannot consume the Invitation or expose existing booking details.
 - Raw credentials, personal data, session identifiers, and setup or Invitation tokens must never be committed or logged. Invitation capabilities are returned only inside one-time fragment-based share URLs.
-- The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, safe path, and correlation ID. An outer request filter records every completion and logs unexpected failures with a server-side stack trace while preserving Spring's safe HTTP error handling.
+- The global API boundary logs each handled failure once using its HTTP status, stable problem code, method, safe path and correlation ID. An outer request filter records every completion and logs unexpected failures with a server-side stack trace while preserving safe framework error handling.
 
-## Current limitation
+The in-memory fixed-window limiter maintains an independent bounded store for each protected feature. Expired entries are reclaimed and the oldest active entry is evicted when a feature reaches its 10,000-window capacity, so flooding one feature cannot exhaust another feature's table. Counts remain local to one backend process and reset on restart; shared or gateway-level limiting is required before horizontal scaling.
 
-Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, the Staff Invitation lifecycle, and the public Guest booking/simulated-confirmation journey. The developer has exercised the assembled journey against PostgreSQL; a clean-checkout run plus explicit contested-slot, rollback, persistence, restart, and shutdown evidence remains for the final Compose walkthrough. Automated suites intentionally remain isolated from PostgreSQL and other services.
+## Current limitations
+
+- Booking begins with a Staff-issued Invitation; there is no public Branch/service discovery journey.
+- Availability uses a 24-hour calendar minus explicit Staff blocks and Appointments; Branch operating hours and holidays are not yet modelled.
+- Email/SMS delivery, Guest cancellation/rescheduling and customer booking history are not implemented.
+- Automated tests are isolated from PostgreSQL and there is no browser end-to-end suite.
+- The local profile uses synthetic data and credentials and must never be enabled in production.
+
+Public registration is intentionally unavailable. The Angular application provides login, session restoration, Admin Staff management, one-time Staff account setup, logout, protected workflow routes, a Branch-time Staff calendar, Availability Block management, the Staff Invitation lifecycle, and the public Guest booking/simulated-confirmation journey.
+
+The assembled journey has been exercised against PostgreSQL, including contested-slot rejection, transaction rollback that preserves the Invitation, persistence across backend restart, and graceful shutdown. Automated suites intentionally remain isolated from PostgreSQL and other services, so those assembled guarantees are documented manual evidence rather than automated regression coverage.
+
+These limitations and their possible evolution are documented in the [Future Roadmap](https://github.com/ppj789/appointment-booking-system/wiki/Future-Roadmap).

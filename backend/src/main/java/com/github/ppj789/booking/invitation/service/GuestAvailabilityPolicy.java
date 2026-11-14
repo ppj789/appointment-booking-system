@@ -9,8 +9,6 @@ import java.util.List;
 
 final class GuestAvailabilityPolicy {
 
-    static final List<Integer> SUPPORTED_DURATIONS = List.of(15, 30, 45, 60, 120, 240);
-
     private static final int MAXIMUM_DAYS = 14;
     private static final long SLOT_SECONDS = Duration.ofMinutes(15).toSeconds();
 
@@ -22,7 +20,7 @@ final class GuestAvailabilityPolicy {
             Instant requestedFrom,
             int days,
             int durationMinutes) {
-        if (!SUPPORTED_DURATIONS.contains(durationMinutes)) {
+        if (!InvitationDurationPolicy.supports(durationMinutes)) {
             throw new InvalidGuestAvailabilityException("Duration is unsupported");
         }
         if (days < 1 || days > MAXIMUM_DAYS) {

@@ -120,7 +120,7 @@ public class GuestInvitationService {
                     invitation.getStaffUser().getDisplayName(),
                     invitation.getGuestName(),
                     invitation.getDefaultDurationMinutes(),
-                    GuestAvailabilityPolicy.SUPPORTED_DURATIONS,
+                    InvitationDurationPolicy.supportedDurations(),
                     new GuestBranch(
                             branch.getPublicCode(),
                             branch.getName(),

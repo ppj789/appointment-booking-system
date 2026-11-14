@@ -3,7 +3,7 @@ package com.github.ppj789.booking.appointment.service;
 import com.github.ppj789.booking.appointment.exception.AppointmentSlotOutsideHorizonException;
 import com.github.ppj789.booking.appointment.exception.InvalidAppointmentSlotException;
 import com.github.ppj789.booking.appointment.exception.UnsupportedAppointmentDurationException;
-import com.github.ppj789.booking.invitation.service.InvitationInputPolicy;
+import com.github.ppj789.booking.invitation.service.InvitationDurationPolicy;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -19,7 +19,7 @@ final class AppointmentBookingPolicy {
             Instant now,
             Instant startsAt,
             int durationMinutes) {
-        if (!InvitationInputPolicy.SUPPORTED_DURATIONS.contains(durationMinutes)) {
+        if (!InvitationDurationPolicy.supports(durationMinutes)) {
             throw new UnsupportedAppointmentDurationException();
         }
         Instant horizonEnd = now.plus(BOOKING_HORIZON);

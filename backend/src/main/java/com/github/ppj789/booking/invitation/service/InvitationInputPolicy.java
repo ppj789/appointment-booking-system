@@ -3,12 +3,9 @@ package com.github.ppj789.booking.invitation.service;
 import com.github.ppj789.booking.invitation.exception.InvalidInvitationInputException;
 import com.github.ppj789.booking.invitation.persistence.InvitationEntity;
 import java.util.Locale;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class InvitationInputPolicy {
-
-    public static final Set<Integer> SUPPORTED_DURATIONS = Set.of(15, 30, 45, 60, 120, 240);
 
     private static final Pattern EMAIL_SHAPE = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
@@ -25,7 +22,7 @@ public final class InvitationInputPolicy {
         String normalizedDescription = requiredText(description, 2000, "Description");
         String normalizedGuestName = requiredText(guestDisplayName, 100, "Guest display name");
         String normalizedGuestEmail = normalizeEmail(guestEmail);
-        if (!SUPPORTED_DURATIONS.contains(defaultDurationMinutes)) {
+        if (!InvitationDurationPolicy.supports(defaultDurationMinutes)) {
             throw new InvalidInvitationInputException("Default duration is unsupported");
         }
         return new InvitationDetails(
