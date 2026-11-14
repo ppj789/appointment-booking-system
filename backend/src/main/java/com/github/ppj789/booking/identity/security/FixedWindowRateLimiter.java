@@ -5,6 +5,7 @@ import com.github.ppj789.booking.identity.exception.RateLimitExceededException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -13,36 +14,41 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class FixedWindowRateLimiter {
 
-    static final int MAXIMUM_WINDOWS = 10_000;
+    static final int MAXIMUM_WINDOWS_PER_SCOPE = 10_000;
 
     private final Clock clock;
     private final SecretHasher secretHasher;
-    private final Map<String, Window> windows = new HashMap<>();
+    private final Map<String, LinkedHashMap<String, Window>> windowsByScope = new HashMap<>();
 
     public synchronized void requirePermit(String scope, String untrustedKey, RateLimit limit) {
         Instant now = clock.instant();
-        String key = scope + ':' + secretHasher.sha256(untrustedKey);
-        if (!windows.containsKey(key) && windows.size() >= MAXIMUM_WINDOWS) {
+        String key = secretHasher.sha256(untrustedKey);
+        LinkedHashMap<String, Window> windows = windowsByScope.computeIfAbsent(
+                scope,
+                ignored -> new LinkedHashMap<>());
+        Window current = windows.get(key);
+        if (current != null && !now.isBefore(current.expiresAt())) {
+            windows.remove(key);
+            current = null;
+        }
+        if (current == null && windows.size() >= MAXIMUM_WINDOWS_PER_SCOPE) {
             windows.entrySet().removeIf(entry -> !now.isBefore(entry.getValue().expiresAt()));
-            if (windows.size() >= MAXIMUM_WINDOWS) {
-                Instant retryAt = windows.values().iterator().next().expiresAt();
-                for (Window window : windows.values()) {
-                    if (window.expiresAt().isBefore(retryAt)) {
-                        retryAt = window.expiresAt();
-                    }
-                }
-                throw new RateLimitExceededException(retryAt);
+            if (windows.size() >= MAXIMUM_WINDOWS_PER_SCOPE) {
+                evictOldestWindow(windows);
             }
         }
-        Window updated = windows.compute(key, (ignored, current) -> {
-            if (current == null || !now.isBefore(current.expiresAt())) {
-                return new Window(1, now.plus(limit.window()));
-            }
-            return new Window(current.attempts() + 1, current.expiresAt());
-        });
+        Window updated = current == null
+                ? new Window(1, now.plus(limit.window()))
+                : new Window(current.attempts() + 1, current.expiresAt());
+        windows.put(key, updated);
         if (updated.attempts() > limit.attempts()) {
             throw new RateLimitExceededException(updated.expiresAt());
         }
+    }
+
+    private void evictOldestWindow(LinkedHashMap<String, Window> windows) {
+        String oldestKey = windows.keySet().iterator().next();
+        windows.remove(oldestKey);
     }
 
     private record Window(int attempts, Instant expiresAt) {

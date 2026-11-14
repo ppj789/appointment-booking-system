@@ -44,23 +44,57 @@ class FixedWindowRateLimiterTests {
     }
 
     @Test
-    void boundsDistinctActiveWindowsAndReclaimsExpiredEntries() {
+    void evictsTheOldestActiveWindowInsteadOfRejectingANewCaller() {
         Instant start = Instant.parse("2026-11-08T08:00:00Z");
-        Clock clock = mock(Clock.class);
-        when(clock.instant()).thenReturn(start);
+        Clock clock = Clock.fixed(start, ZoneOffset.UTC);
         FixedWindowRateLimiter limiter = new FixedWindowRateLimiter(clock, new SecretHasher());
         RateLimit limit = new RateLimit(1, Duration.ofMinutes(5));
 
-        for (int index = 0; index < FixedWindowRateLimiter.MAXIMUM_WINDOWS; index++) {
+        for (int index = 0; index < FixedWindowRateLimiter.MAXIMUM_WINDOWS_PER_SCOPE; index++) {
             limiter.requirePermit("guest-source", "source-" + index, limit);
+        }
+
+        assertDoesNotThrow(() -> limiter.requirePermit("guest-source", "overflow", limit));
+        assertDoesNotThrow(() -> limiter.requirePermit("guest-source", "source-0", limit));
+    }
+
+    @Test
+    void keepsCapacityIndependentBetweenScopes() {
+        Instant start = Instant.parse("2026-11-08T08:00:00Z");
+        Clock clock = Clock.fixed(start, ZoneOffset.UTC);
+        FixedWindowRateLimiter limiter = new FixedWindowRateLimiter(clock, new SecretHasher());
+        RateLimit limit = new RateLimit(1, Duration.ofMinutes(5));
+
+        limiter.requirePermit("login", "existing-login", limit);
+        for (int index = 0; index <= FixedWindowRateLimiter.MAXIMUM_WINDOWS_PER_SCOPE; index++) {
+            limiter.requirePermit("account-setup", "setup-" + index, limit);
         }
 
         RateLimitExceededException exception = assertThrows(
                 RateLimitExceededException.class,
-                () -> limiter.requirePermit("guest-source", "overflow", limit));
+                () -> limiter.requirePermit("login", "existing-login", limit));
         assertEquals(start.plus(Duration.ofMinutes(5)), exception.getRetryAt());
+    }
 
-        when(clock.instant()).thenReturn(start.plus(Duration.ofMinutes(5)));
-        assertDoesNotThrow(() -> limiter.requirePermit("guest-source", "overflow", limit));
+    @Test
+    void reclaimsExpiredWindowsBeforeEvictingActiveOnes() {
+        Instant start = Instant.parse("2026-11-08T08:00:00Z");
+        Clock clock = mock(Clock.class);
+        when(clock.instant()).thenReturn(start);
+        FixedWindowRateLimiter limiter = new FixedWindowRateLimiter(clock, new SecretHasher());
+        RateLimit activeLimit = new RateLimit(1, Duration.ofMinutes(5));
+
+        limiter.requirePermit("login", "oldest-active", activeLimit);
+        limiter.requirePermit("login", "short-lived", new RateLimit(1, Duration.ofMinutes(1)));
+        for (int index = 2; index < FixedWindowRateLimiter.MAXIMUM_WINDOWS_PER_SCOPE; index++) {
+            limiter.requirePermit("login", "active-" + index, activeLimit);
+        }
+
+        when(clock.instant()).thenReturn(start.plus(Duration.ofMinutes(2)));
+        assertDoesNotThrow(() -> limiter.requirePermit("login", "new-caller", activeLimit));
+        RateLimitExceededException exception = assertThrows(
+                RateLimitExceededException.class,
+                () -> limiter.requirePermit("login", "oldest-active", activeLimit));
+        assertEquals(start.plus(Duration.ofMinutes(5)), exception.getRetryAt());
     }
 }
